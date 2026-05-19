@@ -109,7 +109,9 @@ app/                              # Next.js 라우팅만 (페이지 / 라우트 
 ├── (dashboard)/                  # 보호 라우트 그룹
 │   ├── layout.tsx                # Sidebar + Header shell
 │   ├── dashboard/page.tsx        # /dashboard
-│   └── members/page.tsx          # /members
+│   └── members/
+│       ├── page.tsx              # /members (목록)
+│       └── [id]/page.tsx         # /members/:id (상세)
 └── api/
     ├── auth/{login,logout}/      # 쿠키 발급/제거
     └── backend/[...path]/        # catch-all 백엔드 프록시 (자동 토큰 갱신)
@@ -132,11 +134,13 @@ src/
 ├── features/                     # 사용자 액션 단위
 │   ├── auth-login/               # LoginForm + zod 스키마 + useLogin mutation
 │   ├── auth-logout/              # LogoutButton + useLogout mutation
-│   └── member-list-filter/       # URL-backed 필터 폼
+│   ├── member-list-filter/       # URL-backed 필터 폼
+│   └── member-change-status/     # 상태 변경 Dialog + mutation (캐시 invalidate)
 └── widgets/                      # 큰 UI 블록 (composed)
     ├── admin-sidebar/
     ├── admin-header/
-    └── member-list-table/
+    ├── member-list-table/
+    └── member-detail-card/
 ```
 
 레이어 의존 방향: `app → widgets → features → entities → shared` (역방향 금지).
@@ -176,8 +180,15 @@ src/
 - `member-list-table` widget (badge 색상, skeleton, "더 보기" 버튼)
 - `/members` 페이지
 
+### ✅ Round 4 — 회원 상세 + 상태 변경
+- shadcn primitive 추가: Dialog / RadioGroup / Avatar
+- `entities/member`: `getMemberDetail` / `changeMemberStatus` API + `useMemberDetail` hook + `MEMBER_QUERY_KEYS` 키 레지스트리
+- `member-change-status` feature — Dialog 안에서 RadioGroup 으로 상태 선택, 성공 시 상세/목록 캐시 invalidate
+- `member-detail-card` widget — Avatar + Badge + 정보 dl + "상태 변경" 버튼, skeleton / 에러 상태 포함
+- `/members/[id]` 동적 라우트 페이지 — 잘못된 id 는 `notFound()` → 404
+- 회원 목록 row 클릭 → 상세 페이지 이동 (닉네임 셀은 진짜 Link 라 새 탭 가능)
+
 ### 🚧 다음 단계 (후보)
-- 회원 상세 + 상태 변경 (mutation, `MemberStatus` PENDING/COMPLETE/FROZEN)
 - 공연 목록 / 상세 페이지
 - 대시보드 KPI 카드 (백엔드 통계 API 협의 필요 — [TODO.md §1.2](TODO.md))
 - 다크 모드 토글

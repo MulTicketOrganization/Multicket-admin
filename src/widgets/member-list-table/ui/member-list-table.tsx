@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -121,10 +123,33 @@ export function MemberListTable() {
 }
 
 function MemberRow({ member: m }: { member: MemberListItem }) {
+  const router = useRouter();
+  const href = `/members/${m.id}`;
+
+  // 셀의 Link / 버튼 등 인터랙티브 자식 클릭 시 row 네비게이션 중복 방지
+  const handleRowClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
+    if ((e.target as HTMLElement).closest("a, button")) return;
+    router.push(href);
+  };
+
   return (
-    <TableRow>
+    <TableRow
+      className="cursor-pointer"
+      onClick={handleRowClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") router.push(href);
+      }}
+      tabIndex={0}
+    >
       <TableCell className="font-mono text-xs text-muted-foreground">{m.id}</TableCell>
-      <TableCell className="font-medium">{m.nickName}</TableCell>
+      <TableCell className="font-medium">
+        <Link
+          href={href}
+          className="text-foreground hover:text-primary hover:underline underline-offset-4"
+        >
+          {m.nickName}
+        </Link>
+      </TableCell>
       <TableCell className="text-muted-foreground">{m.email}</TableCell>
       <TableCell>
         <Badge variant={typeVariant(m.memberType)}>{memberTypeLabel[m.memberType]}</Badge>
