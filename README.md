@@ -2,21 +2,19 @@
 
 Multicket 서비스의 **관리자 페이지** 단독 프론트엔드.
 
-> 백엔드 API 명세: [ADMIN_BACKEND.md](ADMIN_BACKEND.md) · 백엔드/인프라 협의 항목: [TODO.md](TODO.md) · 프로젝트 룰: [CLAUDE.md](CLAUDE.md) (로컬 only)
-
 ---
 
 ## 스택
 
-| 영역 | 사용 기술 |
-|---|---|
-| Framework | Next.js 16 (App Router) + React 19 + TypeScript |
-| 스타일 | Tailwind v4 + shadcn (new-york, 수동 도입) + Pretendard |
-| 상태관리 | TanStack Query 5 (서버 상태) · react-hook-form + zod (폼) |
-| 아키텍처 | FSD (Feature-Sliced Design) — `src/{shared,entities,features,widgets}/` |
-| 인증 | httpOnly 쿠키 + Next Route Handler 프록시 |
-| 패키지 매니저 | pnpm |
-| 배포 | Vercel |
+| 영역          | 사용 기술                                                               |
+| ------------- | ----------------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router) + React 19 + TypeScript                         |
+| 스타일        | Tailwind v4 + shadcn (new-york, 수동 도입) + Pretendard                 |
+| 상태관리      | TanStack Query 5 (서버 상태) · react-hook-form + zod (폼)               |
+| 아키텍처      | FSD (Feature-Sliced Design) — `src/{shared,entities,features,widgets}/` |
+| 인증          | httpOnly 쿠키 + Next Route Handler 프록시                               |
+| 패키지 매니저 | pnpm                                                                    |
+| 배포          | Vercel                                                                  |
 
 ---
 
@@ -36,11 +34,11 @@ cp .env.example .env.local
 # .env.local 열어서 BACKEND_API_BASE_URL 을 실제 백엔드 주소로 수정
 ```
 
-| 변수 | 설명 | 예시 |
-|---|---|---|
-| `BACKEND_API_BASE_URL` | Multicket-app 백엔드 베이스 URL (서버 전용) | `http://localhost:8080` |
-| `AUTH_COOKIE_NAME` | httpOnly 토큰 쿠키 이름 (기본 `mc_admin_token`) | `mc_admin_token` |
-| `COOKIE_SECURE` | prod 에서 `true` (HTTPS 강제) | `true` |
+| 변수                   | 설명                                            | 예시                    |
+| ---------------------- | ----------------------------------------------- | ----------------------- |
+| `BACKEND_API_BASE_URL` | Multicket-app 백엔드 베이스 URL (서버 전용)     | `http://localhost:8080` |
+| `AUTH_COOKIE_NAME`     | httpOnly 토큰 쿠키 이름 (기본 `mc_admin_token`) | `mc_admin_token`        |
+| `COOKIE_SECURE`        | prod 에서 `true` (HTTPS 강제)                   | `true`                  |
 
 > ⚠️ `NEXT_PUBLIC_*` 접두사는 사용하지 않음 — 토큰/백엔드 URL 등이 브라우저 번들에 노출되지 않도록 의도적으로 분리.
 
@@ -51,22 +49,12 @@ pnpm dev
 # http://localhost:3000
 ```
 
-| 작업 | 명령 |
-|---|---|
-| 개발 서버 | `pnpm dev` |
-| 타입체크 | `pnpm exec tsc --noEmit` |
-| 린트 | `pnpm lint` |
-| 빌드 | `pnpm build` |
-
-### 4) Admin 계정 생성 (백엔드)
-
-회원가입은 기본 `CREATOR` 로 생성됨. Admin 권한 부여는 DB 직접 변경:
-
-```sql
-UPDATE member SET member_type = 'MASTER' WHERE id = {memberId};
-```
-
----
+| 작업      | 명령                     |
+| --------- | ------------------------ |
+| 개발 서버 | `pnpm dev`               |
+| 타입체크  | `pnpm exec tsc --noEmit` |
+| 린트      | `pnpm lint`              |
+| 빌드      | `pnpm build`             |
 
 ## 인증 흐름
 
@@ -92,6 +80,7 @@ UPDATE member SET member_type = 'MASTER' WHERE id = {memberId};
 ```
 
 핵심:
+
 - 토큰은 절대 브라우저 JS 에서 접근 불가 (httpOnly + Secure)
 - 클라이언트는 자기 자신의 Next 라우트 (`/api/backend/...`) 만 호출 → CORS 회피 + 토큰 격리
 - 백엔드가 응답 헤더 `Authorization` 으로 새 토큰을 주면 (Access 자동 갱신) 프록시가 쿠키 즉시 교체
@@ -109,9 +98,12 @@ app/                              # Next.js 라우팅만 (페이지 / 라우트 
 ├── (dashboard)/                  # 보호 라우트 그룹
 │   ├── layout.tsx                # Sidebar + Header shell
 │   ├── dashboard/page.tsx        # /dashboard
-│   └── members/
-│       ├── page.tsx              # /members (목록)
-│       └── [id]/page.tsx         # /members/:id (상세)
+│   ├── members/
+│   │   ├── page.tsx              # /members (목록)
+│   │   └── [id]/page.tsx         # /members/:id (상세)
+│   └── performances/
+│       ├── page.tsx              # /performances (목록)
+│       └── [id]/page.tsx         # /performances/:id (상세)
 └── api/
     ├── auth/{login,logout}/      # 쿠키 발급/제거
     └── backend/[...path]/        # catch-all 백엔드 프록시 (자동 토큰 갱신)
@@ -134,13 +126,16 @@ src/
 ├── features/                     # 사용자 액션 단위
 │   ├── auth-login/               # LoginForm + zod 스키마 + useLogin mutation
 │   ├── auth-logout/              # LogoutButton + useLogout mutation
-│   ├── member-list-filter/       # URL-backed 필터 폼
-│   └── member-change-status/     # 상태 변경 Dialog + mutation (캐시 invalidate)
+│   ├── member-list-filter/       # URL-backed 회원 필터 폼
+│   ├── member-change-status/     # 상태 변경 Dialog + mutation (캐시 invalidate)
+│   └── performance-list-filter/  # URL-backed 공연 필터 폼
 └── widgets/                      # 큰 UI 블록 (composed)
     ├── admin-sidebar/
     ├── admin-header/
     ├── member-list-table/
-    └── member-detail-card/
+    ├── member-detail-card/
+    ├── performance-list-table/
+    └── performance-detail-card/
 ```
 
 레이어 의존 방향: `app → widgets → features → entities → shared` (역방향 금지).
@@ -150,6 +145,7 @@ src/
 ## 구현 현황 (Round 단위)
 
 ### ✅ Round 1 — Foundation
+
 - pnpm 전환, Tailwind v4 + shadcn (manual) 셋업
 - Blue primary + 중성 gray 테마 토큰 (oklch)
 - Pretendard 한글 폰트 적용
@@ -159,6 +155,7 @@ src/
 - TanStack Query / Sonner Providers 루트 적용
 
 ### ✅ Round 2 — 인증 인프라
+
 - 서버 쿠키 헬퍼 (read/write/clear + extractBearer)
 - `POST /api/auth/login` — 백엔드 호출 후 응답 헤더 → httpOnly 쿠키
 - `POST /api/auth/logout` — 백엔드 호출 + 쿠키 제거 (좀비 세션 방지)
@@ -169,6 +166,7 @@ src/
 - `/login` 페이지 + `/dashboard` placeholder
 
 ### ✅ Round 3 — 셸 + 회원 관리
+
 - shadcn primitive 추가: Table / Badge / Skeleton / Select / DropdownMenu / PageHeader
 - 공용 유틸: `formatDateTime` / `useDebouncedValue`
 - `admin-sidebar` widget (고정 너비 240px, lucide 아이콘, active state)
@@ -181,6 +179,7 @@ src/
 - `/members` 페이지
 
 ### ✅ Round 4 — 회원 상세 + 상태 변경
+
 - shadcn primitive 추가: Dialog / RadioGroup / Avatar
 - `entities/member`: `getMemberDetail` / `changeMemberStatus` API + `useMemberDetail` hook + `MEMBER_QUERY_KEYS` 키 레지스트리
 - `member-change-status` feature — Dialog 안에서 RadioGroup 으로 상태 선택, 성공 시 상세/목록 캐시 invalidate
@@ -188,8 +187,17 @@ src/
 - `/members/[id]` 동적 라우트 페이지 — 잘못된 id 는 `notFound()` → 404
 - 회원 목록 row 클릭 → 상세 페이지 이동 (닉네임 셀은 진짜 Link 라 새 탭 가능)
 
+### ✅ Round 5 — 공연 목록 + 상세
+
+- `entities/performance`: `getPerformances` / `getPerformanceDetail` API + `usePerformanceList` (useInfiniteQuery) / `usePerformanceDetail` hooks + `PERFORMANCE_QUERY_KEYS`
+- 공용 유틸: `formatPrice` (ko-KR + "원")
+- `performance-list-filter` feature — title 검색 (디바운스) + genre / area / deleted 3-way Select, URL-backed
+- `performance-list-table` widget — 7-컬럼, 작성자는 회원 상세로 직접 link, 활성/삭제 Badge
+- `performance-detail-card` widget — 4개 sub-Card (메인 / 작성자 / 크루 / 티켓 정보) 로 분리, 포스터 + 시놉시스 + 가격/회차/좌석 표시
+- `/performances`, `/performances/[id]` 페이지
+
 ### 🚧 다음 단계 (후보)
-- 공연 목록 / 상세 페이지
+
 - 대시보드 KPI 카드 (백엔드 통계 API 협의 필요 — [TODO.md §1.2](TODO.md))
 - 다크 모드 토글
 - E2E 테스트 (Playwright)
