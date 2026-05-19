@@ -36,6 +36,20 @@ export {
   SelectScrollDownButton,
 } from "./select";
 export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "./dialog";
+export { RadioGroup, RadioGroupItem } from "./radio-group";
+export { Avatar, AvatarImage, AvatarFallback } from "./avatar";
+export {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
