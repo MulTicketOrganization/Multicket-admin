@@ -4,7 +4,6 @@ import { ArrowRight, Ticket, Users } from "lucide-react";
 
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -38,16 +37,6 @@ export default function DashboardPage() {
           description="공연 목록 조회, 상세 정보 확인."
         />
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">통계 카드 (예정)</CardTitle>
-          <CardDescription>
-            백엔드에 통계 API 가 추가되면 총 회원 수 / 신규 가입 / 활성 공연 등 KPI 가 여기 표시됩니다.
-            (현재 백엔드 미구현 — TODO.md §1.2 참고)
-          </CardDescription>
-        </CardHeader>
-      </Card>
     </>
   );
 }

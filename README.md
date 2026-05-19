@@ -196,10 +196,16 @@ src/
 - `performance-detail-card` widget — 4개 sub-Card (메인 / 작성자 / 크루 / 티켓 정보) 로 분리, 포스터 + 시놉시스 + 가격/회차/좌석 표시
 - `/performances`, `/performances/[id]` 페이지
 
+### ✅ Round 6 — 다크 모드
+
+- `next-themes` 도입 (Tailwind v4 `.dark` class 토글)
+- `Providers` 에 `ThemeProvider` 통합 — defaultTheme="system" + Sonner Toaster 도 system 테마 동기화
+- `ThemeToggle` primitive — DropdownMenu 안에서 라이트 / 다크 / 시스템 3-way, mounted 가드로 SSR mismatch 회피
+- `AdminHeader` 우측에 ThemeToggle 배치
+- 대시보드 통계 placeholder Card 제거 (KPI 작업 보류)
+
 ### 🚧 다음 단계 (후보)
 
-- 대시보드 KPI 카드 (백엔드 통계 API 협의 필요 — [TODO.md §1.2](TODO.md))
-- 다크 모드 토글
 - E2E 테스트 (Playwright)
 
 > 본 섹션은 라운드가 진행될 때마다 갱신됨.

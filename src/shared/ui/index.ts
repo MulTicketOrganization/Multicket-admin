@@ -11,6 +11,7 @@ export {
 } from "./card";
 export { Separator } from "./separator";
 export { PageHeader } from "./page-header";
+export { ThemeToggle } from "./theme-toggle";
 export {
   Table,
   TableHeader,
