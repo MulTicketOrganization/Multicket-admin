@@ -56,16 +56,6 @@ pnpm dev
 | 린트      | `pnpm lint`              |
 | 빌드      | `pnpm build`             |
 
-### 4) Admin 계정 생성 (백엔드)
-
-회원가입은 기본 `CREATOR` 로 생성됨. Admin 권한 부여는 DB 직접 변경:
-
-```sql
-UPDATE member SET member_type = 'MASTER' WHERE id = {memberId};
-```
-
----
-
 ## 인증 흐름
 
 ```
