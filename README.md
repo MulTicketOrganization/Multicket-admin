@@ -142,76 +142,6 @@ src/
 
 ---
 
-## 구현 현황 (Round 단위)
-
-### ✅ Round 1 — Foundation
-
-- pnpm 전환, Tailwind v4 + shadcn (manual) 셋업
-- Blue primary + 중성 gray 테마 토큰 (oklch)
-- Pretendard 한글 폰트 적용
-- FSD 폴더 스캐폴드 + tsconfig path alias (`@/* → src/*`)
-- shared 기본 primitive: Button / Input / Label / Card / Separator
-- 도메인 enum / 타입: Member / Performance (한글 라벨 맵 포함)
-- TanStack Query / Sonner Providers 루트 적용
-
-### ✅ Round 2 — 인증 인프라
-
-- 서버 쿠키 헬퍼 (read/write/clear + extractBearer)
-- `POST /api/auth/login` — 백엔드 호출 후 응답 헤더 → httpOnly 쿠키
-- `POST /api/auth/logout` — 백엔드 호출 + 쿠키 제거 (좀비 세션 방지)
-- `app/api/backend/[...path]` — 모든 admin API catch-all 프록시 (토큰 자동 갱신 / 401 처리)
-- `proxy.ts` — `/dashboard|/members|/performances` 가드, 인증 상태 시 `/login` 리다이렉트
-- `auth-login` feature (zod + react-hook-form + sonner toast + `?from=` 복귀)
-- `auth-logout` feature (캐시 clear + 라우팅)
-- `/login` 페이지 + `/dashboard` placeholder
-
-### ✅ Round 3 — 셸 + 회원 관리
-
-- shadcn primitive 추가: Table / Badge / Skeleton / Select / DropdownMenu / PageHeader
-- 공용 유틸: `formatDateTime` / `useDebouncedValue`
-- `admin-sidebar` widget (고정 너비 240px, lucide 아이콘, active state)
-- `admin-header` widget (sticky, LogoutButton)
-- `(dashboard)/layout.tsx` — 실제 셸로 교체
-- `/dashboard` — Shortcut 카드 (회원/공연) + 통계 placeholder
-- 회원 목록 query (cursor 페이지네이션, `useInfiniteQuery`)
-- `member-list-filter` feature (URL search params source-of-truth, 키워드 디바운스)
-- `member-list-table` widget (badge 색상, skeleton, "더 보기" 버튼)
-- `/members` 페이지
-
-### ✅ Round 4 — 회원 상세 + 상태 변경
-
-- shadcn primitive 추가: Dialog / RadioGroup / Avatar
-- `entities/member`: `getMemberDetail` / `changeMemberStatus` API + `useMemberDetail` hook + `MEMBER_QUERY_KEYS` 키 레지스트리
-- `member-change-status` feature — Dialog 안에서 RadioGroup 으로 상태 선택, 성공 시 상세/목록 캐시 invalidate
-- `member-detail-card` widget — Avatar + Badge + 정보 dl + "상태 변경" 버튼, skeleton / 에러 상태 포함
-- `/members/[id]` 동적 라우트 페이지 — 잘못된 id 는 `notFound()` → 404
-- 회원 목록 row 클릭 → 상세 페이지 이동 (닉네임 셀은 진짜 Link 라 새 탭 가능)
-
-### ✅ Round 5 — 공연 목록 + 상세
-
-- `entities/performance`: `getPerformances` / `getPerformanceDetail` API + `usePerformanceList` (useInfiniteQuery) / `usePerformanceDetail` hooks + `PERFORMANCE_QUERY_KEYS`
-- 공용 유틸: `formatPrice` (ko-KR + "원")
-- `performance-list-filter` feature — title 검색 (디바운스) + genre / area / deleted 3-way Select, URL-backed
-- `performance-list-table` widget — 7-컬럼, 작성자는 회원 상세로 직접 link, 활성/삭제 Badge
-- `performance-detail-card` widget — 4개 sub-Card (메인 / 작성자 / 크루 / 티켓 정보) 로 분리, 포스터 + 시놉시스 + 가격/회차/좌석 표시
-- `/performances`, `/performances/[id]` 페이지
-
-### ✅ Round 6 — 다크 모드
-
-- `next-themes` 도입 (Tailwind v4 `.dark` class 토글)
-- `Providers` 에 `ThemeProvider` 통합 — defaultTheme="system" + Sonner Toaster 도 system 테마 동기화
-- `ThemeToggle` primitive — DropdownMenu 안에서 라이트 / 다크 / 시스템 3-way, mounted 가드로 SSR mismatch 회피
-- `AdminHeader` 우측에 ThemeToggle 배치
-- 대시보드 통계 placeholder Card 제거 (KPI 작업 보류)
-
-### 🚧 다음 단계 (후보)
-
-- E2E 테스트 (Playwright)
-
-> 본 섹션은 라운드가 진행될 때마다 갱신됨.
-
----
-
 ## 배포 (Vercel)
 
 1. Vercel 프로젝트 연결 (이 저장소 import)
@@ -222,9 +152,3 @@ src/
 3. Vercel 도메인 확정 후 백엔드 팀에 **CORS Origin 추가 요청** (`Multicket-app` repo) — [TODO.md §1.1](TODO.md)
 
 > Vercel 빌드 환경은 자동으로 `sharp` 등 native 빌드를 처리하므로 `pnpm approve-builds` 가 필요 없음.
-
----
-
-## 라이선스
-
-비공개 (Multicket Organization 내부 사용).
