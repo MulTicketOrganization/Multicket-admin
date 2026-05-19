@@ -22,3 +22,12 @@ export function formatDateTime(
 export function formatDate(iso: string | null | undefined): string {
   return formatDateTime(iso, { year: "numeric", month: "2-digit", day: "2-digit" });
 }
+
+/**
+ * 가격 → ko-KR 천 단위 콤마 + 원.
+ * null/undefined → "-"
+ */
+export function formatPrice(value: number | null | undefined): string {
+  if (value == null) return "-";
+  return `${value.toLocaleString("ko-KR")}원`;
+}
