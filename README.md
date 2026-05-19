@@ -126,13 +126,16 @@ src/
 ├── features/                     # 사용자 액션 단위
 │   ├── auth-login/               # LoginForm + zod 스키마 + useLogin mutation
 │   ├── auth-logout/              # LogoutButton + useLogout mutation
-│   ├── member-list-filter/       # URL-backed 필터 폼
-│   └── member-change-status/     # 상태 변경 Dialog + mutation (캐시 invalidate)
+│   ├── member-list-filter/       # URL-backed 회원 필터 폼
+│   ├── member-change-status/     # 상태 변경 Dialog + mutation (캐시 invalidate)
+│   └── performance-list-filter/  # URL-backed 공연 필터 폼
 └── widgets/                      # 큰 UI 블록 (composed)
     ├── admin-sidebar/
     ├── admin-header/
     ├── member-list-table/
-    └── member-detail-card/
+    ├── member-detail-card/
+    ├── performance-list-table/
+    └── performance-detail-card/
 ```
 
 레이어 의존 방향: `app → widgets → features → entities → shared` (역방향 금지).
