@@ -4,10 +4,20 @@ const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "mc_admin_token";
 
 /**
  * 보호 경로 (인증 필요).
- * /dashboard, /members, /performances 등 admin 페이지는 모두 (dashboard) 그룹 아래에 둠.
- * 그룹은 URL 에 영향 없으므로 실제 path 기준으로 매칭.
+ * admin 페이지는 모두 (dashboard) 라우트 그룹 아래에 둔다.
+ * 그룹은 URL 에 영향 없으므로 실제 path 기준으로 매칭한다.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/members", "/performances"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/members",
+  "/performances",
+  "/inquiries",
+  "/revenue",
+  "/notices",
+  "/keywords",
+  "/batch",
+  "/account",
+];
 
 /** 토큰이 있으면 접근시 /dashboard 로 보내야 하는 페이지들 */
 const GUEST_ONLY_PREFIXES = ["/login"];

@@ -1,42 +1,60 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Ticket, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
+import { ADMIN_NAV_GROUPS } from "@/widgets/admin-sidebar";
+import { DashboardOverview } from "@/widgets/dashboard-overview";
 
 export const metadata: Metadata = {
   title: "대시보드",
 };
 
+/** 사이드바 항목과 짝이 되는 설명 — 대시보드 바로가기 카드에 쓴다 */
+const SHORTCUT_DESCRIPTIONS: Record<string, string> = {
+  "/members": "회원 목록 조회, 가입 승인·동결·정지 등 상태 처리.",
+  "/performances": "공연 목록·상세 조회, 공연 삭제.",
+  "/inquiries": "회원 상태 변경·공연 검수 요청 등 문의 처리.",
+  "/revenue": "월별 크리에이터·공연 단위 결제 및 취소 내역.",
+  "/notices": "취소·환불 규정과 정산 안내 공고 등록.",
+  "/keywords": "앱 검색 화면에 노출되는 키워드 관리.",
+  "/batch": "배치 실행 상태 확인 및 실패 배치 재실행.",
+  "/account": "로그인한 관리자 계정 정보.",
+};
+
 export default function DashboardPage() {
+  const shortcutGroups = ADMIN_NAV_GROUPS.filter((g) => g.title !== null);
+
   return (
     <>
       <PageHeader
         title="대시보드"
-        description="Multicket 관리자 페이지에 오신 것을 환영합니다."
+        description="Multicket 운영 현황 요약입니다."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <ShortcutCard
-          href="/members"
-          icon={<Users className="size-5" />}
-          title="회원 관리"
-          description="회원 목록 조회, 상태 변경 (가입 대기 / 완료 / 동결)."
-        />
-        <ShortcutCard
-          href="/performances"
-          icon={<Ticket className="size-5" />}
-          title="공연 관리"
-          description="공연 목록 조회, 상세 정보 확인."
-        />
-      </div>
+      <DashboardOverview />
+
+      {shortcutGroups.map((group) => (
+        <section key={group.title} className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground">{group.title}</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <ShortcutCard
+                  key={item.href}
+                  href={item.href}
+                  icon={<Icon className="size-5" />}
+                  title={item.label}
+                  description={SHORTCUT_DESCRIPTIONS[item.href] ?? ""}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </>
   );
 }
@@ -53,11 +71,11 @@ function ShortcutCard({
   description: string;
 }) {
   return (
-    <Card className="transition-shadow hover:shadow-md">
+    <Card className="transition-colors hover:bg-accent/40">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div className="space-y-1.5">
           <CardTitle className="flex items-center gap-2 text-base">
-            <span className="text-primary">{icon}</span>
+            <span className="text-muted-foreground">{icon}</span>
             {title}
           </CardTitle>
           <CardDescription>{description}</CardDescription>
