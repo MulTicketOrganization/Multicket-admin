@@ -3,12 +3,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { getPerformances } from "../api/get-performances";
-import type { Area, Genre, PerformanceListItem } from "./types";
+import type { Genre, PerformanceListItem, Region } from "./types";
 
 export interface PerformanceListFilters {
   title?: string;
   genre?: Genre;
-  area?: Area;
+  region?: Region;
   deleted?: boolean;
   memberId?: number;
 }
@@ -27,7 +27,7 @@ export function usePerformanceList(filters: PerformanceListFilters) {
         cursorId: pageParam,
         title: filters.title,
         genre: filters.genre,
-        area: filters.area,
+        region: filters.region,
         deleted: filters.deleted,
         memberId: filters.memberId,
       }),

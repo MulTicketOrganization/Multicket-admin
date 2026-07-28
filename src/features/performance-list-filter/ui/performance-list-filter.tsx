@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Search } from "lucide-react";
 
-import { Area, GENRES, type Area as TArea, type Genre } from "@/entities/performance";
+import { GENRES, REGIONS, type Genre, type Region } from "@/entities/performance";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
+import { useDebouncedValue, useSyncedState } from "@/shared/hooks";
 
 import {
   ALL_SENTINEL,
@@ -27,18 +27,14 @@ export function PerformanceListFilter() {
   const {
     title: urlTitle,
     genre,
-    area,
+    region,
     deletedSelect,
     selectToDeleted,
     update,
   } = usePerformanceFilters();
 
-  const [localTitle, setLocalTitle] = useState(urlTitle);
+  const [localTitle, setLocalTitle] = useSyncedState(urlTitle);
   const debouncedTitle = useDebouncedValue(localTitle, TITLE_DEBOUNCE_MS);
-
-  useEffect(() => {
-    setLocalTitle(urlTitle);
-  }, [urlTitle]);
 
   useEffect(() => {
     if (debouncedTitle === urlTitle) return;
@@ -78,20 +74,21 @@ export function PerformanceListFilter() {
         </SelectContent>
       </Select>
 
+      {/* 백엔드 목록 필터는 시/도가 아니라 권역 단위 */}
       <Select
-        value={area ?? ALL_SENTINEL}
+        value={region ?? ALL_SENTINEL}
         onValueChange={(v) =>
-          update({ area: v === ALL_SENTINEL ? null : (v as TArea) })
+          update({ region: v === ALL_SENTINEL ? null : (v as Region) })
         }
       >
-        <SelectTrigger aria-label="지역 필터">
-          <SelectValue placeholder="지역" />
+        <SelectTrigger aria-label="권역 필터">
+          <SelectValue placeholder="권역" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL_SENTINEL}>전체 지역</SelectItem>
-          {Object.values(Area).map((a) => (
-            <SelectItem key={a} value={a}>
-              {a}
+          <SelectItem value={ALL_SENTINEL}>전체 권역</SelectItem>
+          {REGIONS.map((r) => (
+            <SelectItem key={r} value={r}>
+              {r}
             </SelectItem>
           ))}
         </SelectContent>

@@ -127,8 +127,14 @@ function PerformanceRow({ performance: p }: { performance: PerformanceListItem }
       </TableCell>
       <TableCell className="text-muted-foreground">{p.venueName}</TableCell>
       <TableCell>
-        {p.genre ? (
-          <Badge variant="secondary">{p.genre}</Badge>
+        {p.genres && p.genres.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {p.genres.map((g) => (
+              <Badge key={g} variant="secondary">
+                {g}
+              </Badge>
+            ))}
+          </div>
         ) : (
           <span className="text-xs text-muted-foreground">-</span>
         )}
