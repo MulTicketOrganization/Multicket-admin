@@ -31,3 +31,17 @@ export function formatPrice(value: number | null | undefined): string {
   if (value == null) return "-";
   return `${value.toLocaleString("ko-KR")}원`;
 }
+
+/** 단위 없는 천 단위 콤마. 표의 금액 열처럼 단위를 헤더에 둘 때 사용. */
+export function formatNumber(value: number | null | undefined): string {
+  if (value == null) return "-";
+  return value.toLocaleString("ko-KR");
+}
+
+/** yyyy-MM-dd — 백엔드 date 쿼리 파라미터 포맷 */
+export function toDateParam(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}

@@ -6,4 +6,4 @@ export {
   type PerformanceListFilters,
 } from "./model/use-performance-list";
 export { usePerformanceDetail, PERFORMANCE_QUERY_KEYS } from "./model/use-performance-detail";
-export { getPerformances, getPerformanceDetail } from "./api";
+export { getPerformances, getPerformanceDetail, deletePerformance } from "./api";

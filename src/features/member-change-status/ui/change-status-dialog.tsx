@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  MemberStatus,
+  ALLOWED_MEMBER_EVENTS,
+  DESTRUCTIVE_MEMBER_EVENTS,
+  memberEventDescription,
+  memberEventLabel,
   memberStatusLabel,
-  type MemberStatus as TMemberStatus,
+  type MemberEvent,
+  type MemberStatus,
 } from "@/entities/member";
 import { Button } from "@/shared/ui/button";
 import {
@@ -28,15 +32,14 @@ interface ChangeStatusDialogProps {
   onOpenChange: (open: boolean) => void;
   memberId: number;
   memberNickname?: string | null;
-  currentStatus: TMemberStatus;
+  currentStatus: MemberStatus;
 }
 
-const STATUS_DESCRIPTIONS: Record<TMemberStatus, string> = {
-  [MemberStatus.PENDING]: "이메일 인증 완료 전. 로그인 등 일부 기능이 제한됩니다.",
-  [MemberStatus.COMPLETE]: "정상 사용 가능 상태입니다.",
-  [MemberStatus.FROZEN]: "로그인 차단. 운영 정책 위반 등에 사용하세요.",
-};
-
+/**
+ * 회원 상태 변경 다이얼로그.
+ * 백엔드는 목표 상태가 아니라 "전이 이벤트"를 받으므로, 현재 상태에서
+ * 허용되는 이벤트만 노출한다 (허용되지 않는 전이는 서버가 400 으로 거부).
+ */
 export function ChangeStatusDialog({
   open,
   onOpenChange,
@@ -44,32 +47,30 @@ export function ChangeStatusDialog({
   memberNickname,
   currentStatus,
 }: ChangeStatusDialogProps) {
-  const [selected, setSelected] = useState<TMemberStatus>(currentStatus);
+  const allowedEvents = ALLOWED_MEMBER_EVENTS[currentStatus] ?? [];
+  const [selected, setSelected] = useState<MemberEvent | null>(null);
 
-  // 다이얼로그가 새로 열릴 때 현재 상태로 reset
-  useEffect(() => {
-    if (open) setSelected(currentStatus);
-  }, [open, currentStatus]);
+  // 다이얼로그가 새로 열릴 때 선택 초기화 (effect 대신 렌더 중 상태 조정)
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSelected(null);
+  }
 
   const mutation = useChangeMemberStatus();
-  const isDirty = selected !== currentStatus;
+  const isDestructive = selected != null && DESTRUCTIVE_MEMBER_EVENTS.includes(selected);
 
   const handleSubmit = () => {
-    if (!isDirty) {
-      onOpenChange(false);
-      return;
-    }
+    if (!selected) return;
     mutation.mutate(
-      { memberId, memberStatus: selected },
+      { memberId, event: selected },
       {
         onSuccess: () => {
-          toast.success(`회원 상태를 "${memberStatusLabel[selected]}" 로 변경했습니다.`);
+          toast.success(`"${memberEventLabel[selected]}" 처리를 적용했습니다.`);
           onOpenChange(false);
         },
         onError: (err) => {
-          toast.error(
-            err instanceof Error ? err.message : "상태 변경에 실패했습니다.",
-          );
+          toast.error(err instanceof Error ? err.message : "상태 변경에 실패했습니다.");
         },
       },
     );
@@ -81,37 +82,58 @@ export function ChangeStatusDialog({
         <DialogHeader>
           <DialogTitle>회원 상태 변경</DialogTitle>
           <DialogDescription>
-            {memberNickname ? <span className="font-medium text-foreground">{memberNickname}</span> : "회원"}
-            {" 의 상태를 변경합니다. 변경 후 즉시 적용됩니다."}
+            {memberNickname ? (
+              <span className="font-medium text-foreground">{memberNickname}</span>
+            ) : (
+              "회원"
+            )}
+            {" 님의 현재 상태는 "}
+            <span className="font-medium text-foreground">
+              {memberStatusLabel[currentStatus]}
+            </span>
+            {" 입니다. 적용할 처리를 선택하세요."}
           </DialogDescription>
         </DialogHeader>
 
-        <RadioGroup
-          value={selected}
-          onValueChange={(v) => setSelected(v as TMemberStatus)}
-          className="gap-3"
-        >
-          {Object.values(MemberStatus).map((s) => (
-            <Label
-              key={s}
-              htmlFor={`status-${s}`}
-              className="flex cursor-pointer items-start gap-3 rounded-md border p-3 hover:bg-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50"
-            >
-              <RadioGroupItem id={`status-${s}`} value={s} className="mt-0.5" />
-              <div className="space-y-0.5">
-                <div className="text-sm font-medium">
-                  {memberStatusLabel[s]}
-                  {s === currentStatus && (
-                    <span className="ml-2 text-xs text-muted-foreground">(현재)</span>
-                  )}
+        {allowedEvents.length === 0 ? (
+          <p className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">
+            현재 상태에서는 적용 가능한 처리가 없습니다.
+          </p>
+        ) : (
+          <RadioGroup
+            value={selected ?? ""}
+            onValueChange={(v) => setSelected(v as MemberEvent)}
+            className="gap-3"
+          >
+            {allowedEvents.map((e) => (
+              <Label
+                key={e}
+                htmlFor={`event-${e}`}
+                className="flex cursor-pointer items-start gap-3 rounded-md border p-3 hover:bg-accent"
+              >
+                <RadioGroupItem id={`event-${e}`} value={e} className="mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-sm font-medium">
+                    {memberEventLabel[e]}
+                    {DESTRUCTIVE_MEMBER_EVENTS.includes(e) && (
+                      <AlertTriangle className="size-3.5 text-destructive" />
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {memberEventDescription[e]}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {STATUS_DESCRIPTIONS[s]}
-                </div>
-              </div>
-            </Label>
-          ))}
-        </RadioGroup>
+              </Label>
+            ))}
+          </RadioGroup>
+        )}
+
+        {isDestructive && (
+          <p className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+            되돌릴 수 없는 처리입니다. 대상 회원을 다시 확인하세요.
+          </p>
+        )}
 
         <DialogFooter>
           <Button
@@ -124,11 +146,12 @@ export function ChangeStatusDialog({
           </Button>
           <Button
             type="button"
+            variant={isDestructive ? "destructive" : "default"}
             onClick={handleSubmit}
-            disabled={!isDirty || mutation.isPending}
+            disabled={!selected || mutation.isPending}
           >
             {mutation.isPending && <Loader2 className="animate-spin" />}
-            {mutation.isPending ? "변경 중..." : "변경하기"}
+            {mutation.isPending ? "적용 중..." : "적용하기"}
           </Button>
         </DialogFooter>
       </DialogContent>

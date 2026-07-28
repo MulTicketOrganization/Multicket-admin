@@ -1,10 +1,11 @@
 /**
  * 공연 도메인 enum / 타입.
- * 출처: ADMIN_BACKEND.md §2.1 ~ §2.3, §3 Enum, 부록 A.
+ * 출처: https://multicket.duckdns.org/v3/api-docs (Admin 태그)
  */
 
-import type { LoginType, MemberStatus, MemberType } from "@/entities/member";
+import type { MemberStatus, MemberType } from "@/entities/member";
 
+/** 공연 상세 응답의 `area` — 시/도 단위 */
 export const Area = {
   SEOUL: "서울특별시",
   INCHEON: "인천광역시",
@@ -27,6 +28,22 @@ export const Area = {
   ETC: "기타",
 } as const;
 export type Area = (typeof Area)[keyof typeof Area];
+
+/**
+ * 목록 조회 필터의 `region` — 시/도가 아니라 통합 "권역" 단위.
+ * 상세 응답의 Area 와 값 체계가 다르므로 절대 섞어 쓰지 말 것.
+ */
+export const REGIONS = [
+  "수도권",
+  "충청권",
+  "영남권",
+  "호남권",
+  "강원",
+  "제주",
+  "대학로",
+  "기타",
+] as const;
+export type Region = (typeof REGIONS)[number];
 
 /** Genre 는 백엔드가 한글 문자열을 그대로 사용 */
 export const GENRES = [
@@ -60,11 +77,17 @@ export const TicketType = {
 } as const;
 export type TicketType = (typeof TicketType)[keyof typeof TicketType];
 
-/** 공연 목록 쿼리 파라미터 */
+export const DiscountType = {
+  PERCENT: "PERCENT",
+  FIXED: "FIXED",
+} as const;
+export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType];
+
+/** GET /admin/performance/list 쿼리 파라미터 */
 export interface PerformanceListQuery {
   cursorId: number;
   genre?: Genre;
-  area?: Area;
+  region?: Region;
   deleted?: boolean;
   memberId?: number;
   title?: string;
@@ -77,7 +100,8 @@ export interface PerformanceListItem {
   venueName: string;
   startDate: string;
   endDate: string;
-  genre: Genre | null;
+  /** 장르는 배열 (단수 `genre` 아님) */
+  genres: string[] | null;
   deleted: boolean;
   memberId: number | null;
   memberNickname: string | null;
@@ -92,6 +116,8 @@ export interface CrewInfo {
 export interface TicketDate {
   id: number;
   enableDate: string;
+  amountLeft: number | null;
+  purchaseDisabled: boolean | null;
 }
 
 export interface TicketInfo {
@@ -100,7 +126,14 @@ export interface TicketInfo {
   price: number;
 }
 
-/** 공연 상세 응답 (공연 + 티켓 + 작성자) */
+export interface Discount {
+  id: number;
+  discountType: DiscountType;
+  /** 백엔드가 문자열로 내려준다 (PERCENT 면 "10", FIXED 면 "3000") */
+  discountValue: string;
+}
+
+/** GET /admin/performance/detail 응답 (공연 + 티켓 + 작성자) */
 export interface PerformanceDetail {
   // 공연
   performanceId: number;
@@ -115,26 +148,27 @@ export interface PerformanceDetail {
   posterUrl: string | null;
   synopsis: string | null;
   area: Area | null;
-  genre: Genre | null;
+  genres: string[] | null;
   isOpenRun: boolean | null;
   isDaeHakRo: boolean | null;
   ticketLink: string | null;
+  /** 예매 마감 시간 (시간 단위) */
+  limitTime: number | null;
   deleted: boolean;
   syncedAt: string | null;
   createDate: string;
   updateDate: string;
   crewInfos: CrewInfo[] | null;
   // 티켓
-  ticketAccountId: number | null;
   amount: number | null;
   amountLeft: number | null;
   ticketDates: TicketDate[] | null;
   ticketInfos: TicketInfo[] | null;
+  discounts: Discount[] | null;
   // 작성자
   memberId: number | null;
   memberNickname: string | null;
   memberEmail: string | null;
   memberType: MemberType | null;
   memberStatus: MemberStatus | null;
-  memberLoginType?: LoginType | null;
 }

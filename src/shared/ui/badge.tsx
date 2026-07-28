@@ -15,10 +15,11 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow",
         outline: "text-foreground",
+        // 무채색 테마: 색 대신 명도/외곽선으로 구분한다 (라벨 텍스트가 의미를 전달).
         success:
-          "border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+          "border-transparent bg-foreground/10 text-foreground",
         warning:
-          "border-transparent bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+          "border-foreground/40 bg-transparent text-foreground font-semibold",
         muted:
           "border-transparent bg-muted text-muted-foreground",
       },

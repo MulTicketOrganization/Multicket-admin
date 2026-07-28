@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
 
@@ -20,12 +20,18 @@ const OPTIONS: Array<{ value: ThemeKey; label: string; icon: typeof Sun }> = [
   { value: "system", label: "시스템 설정", icon: Monitor },
 ];
 
+const noopSubscribe = () => () => {};
+
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  // next-themes 는 mount 전에 theme 가 undefined → SSR mismatch 회피용
-  useEffect(() => setMounted(true), []);
+  // next-themes 는 mount 전에 theme 가 undefined → SSR mismatch 회피용.
+  // 서버 스냅샷은 false, 클라이언트 스냅샷은 true 라 hydration 이후에만 true 가 된다.
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
 
   // mount 전엔 라이트 모드 아이콘으로 자리 차지 (interaction 차단)
   if (!mounted) {

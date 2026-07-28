@@ -4,45 +4,23 @@ import { useState } from "react";
 import { Pencil, AlertTriangle } from "lucide-react";
 
 import {
-  MemberStatus,
-  MemberType,
   genderLabel,
   loginTypeLabel,
   memberStatusLabel,
+  memberStatusVariant,
   memberTypeLabel,
+  memberTypeVariant,
   useMemberDetail,
   type MemberDetail,
 } from "@/entities/member";
 import { ChangeStatusDialog } from "@/features/member-change-status";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { Badge, type BadgeProps } from "@/shared/ui/badge";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
-function statusVariant(s: MemberStatus): BadgeProps["variant"] {
-  switch (s) {
-    case MemberStatus.COMPLETE:
-      return "success";
-    case MemberStatus.PENDING:
-      return "warning";
-    case MemberStatus.FROZEN:
-      return "destructive";
-  }
-}
-
-function typeVariant(t: MemberType): BadgeProps["variant"] {
-  switch (t) {
-    case MemberType.MASTER:
-      return "default";
-    case MemberType.CREATOR:
-      return "secondary";
-    case MemberType.AUDIENCE:
-      return "muted";
-  }
-}
 
 function formatBirthday(year: number | null, month: number | null, day: number | null): string {
   if (year == null && month == null && day == null) return "-";
@@ -117,10 +95,10 @@ function MemberDetailContent({ member }: { member: MemberDetail }) {
                 </div>
                 <p className="text-sm text-muted-foreground">{member.email}</p>
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  <Badge variant={typeVariant(member.memberType)}>
+                  <Badge variant={memberTypeVariant[member.memberType]}>
                     {memberTypeLabel[member.memberType]}
                   </Badge>
-                  <Badge variant={statusVariant(member.memberStatus)}>
+                  <Badge variant={memberStatusVariant[member.memberStatus]}>
                     {memberStatusLabel[member.memberStatus]}
                   </Badge>
                 </div>
