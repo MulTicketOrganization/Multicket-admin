@@ -1,6 +1,9 @@
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { Input } from "./input";
+export { Textarea } from "./textarea";
 export { Label } from "./label";
+export { EmptyState } from "./empty-state";
+export { StatCard } from "./stat-card";
 export {
   Card,
   CardHeader,
