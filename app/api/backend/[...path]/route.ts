@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 
 import { serverEnv } from "@/shared/config/env";
 import {
-  clearAuthCookie,
+  applyAuthHeaders,
+  clearSession,
   extractBearerToken,
+  extractRefreshToken,
   readAuthCookie,
+  readRefreshCookie,
   writeAuthCookie,
+  writeRefreshCookie,
 } from "@/shared/api/server";
 
 /**
@@ -29,7 +33,15 @@ async function proxy(req: Request, ctx: Ctx): Promise<Response> {
     target.searchParams.append(k, v);
   }
 
-  const token = await readAuthCookie();
+  const refresh = await readRefreshCookie();
+  let token = await readAuthCookie();
+
+  // Access 쿠키만 먼저 만료된 경우(1d) refresh 로 선재발급.
+  // 백엔드 웹 플로우는 refresh_token 쿠키를 보고 새 access 를 Authorization 헤더로 준다.
+  if (!token && refresh) {
+    token = await renewAccessToken(refresh);
+    if (token) await writeAuthCookie(token);
+  }
 
   // 본문은 GET/HEAD 가 아닐 때만 전달
   const hasBody = !["GET", "HEAD"].includes(req.method);
@@ -38,7 +50,7 @@ async function proxy(req: Request, ctx: Ctx): Promise<Response> {
   const headers = new Headers();
   const ct = req.headers.get("content-type");
   if (ct) headers.set("content-type", ct);
-  if (token) headers.set("authorization", `Bearer ${token}`);
+  applyAuthHeaders(headers, token, refresh);
 
   let upstream: Response;
   try {
@@ -66,9 +78,15 @@ async function proxy(req: Request, ctx: Ctx): Promise<Response> {
     await writeAuthCookie(newToken);
   }
 
-  // 401 일 때 쿠키 제거 (Access 만료 + Refresh 없음 케이스)
+  // refresh 는 회전하지 않는 게 원칙이지만, 새로 내려오면 그대로 반영한다.
+  const newRefresh = extractRefreshToken(upstream.headers);
+  if (newRefresh && newRefresh !== refresh) {
+    await writeRefreshCookie(newRefresh);
+  }
+
+  // 401 일 때 세션 제거 (Access 만료 + Refresh 도 무효 케이스)
   if (upstream.status === 401) {
-    await clearAuthCookie();
+    await clearSession();
   }
 
   // 응답 본문 패스스루
@@ -80,6 +98,25 @@ async function proxy(req: Request, ctx: Ctx): Promise<Response> {
     status: upstream.status,
     headers: respHeaders,
   });
+}
+
+/**
+ * POST /api/member/token/refresh — 웹은 refresh_token 쿠키를 읽어
+ * 새 access 를 Authorization 응답 헤더로 돌려준다 (body 없음).
+ */
+async function renewAccessToken(refresh: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${serverEnv.backendBaseUrl}/api/member/token/refresh`, {
+      method: "POST",
+      headers: applyAuthHeaders(new Headers(), null, refresh),
+      cache: "no-store",
+      redirect: "manual",
+    });
+    if (!res.ok) return null;
+    return extractBearerToken(res.headers.get("authorization"));
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(req: Request, ctx: Ctx) {

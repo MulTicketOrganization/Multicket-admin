@@ -11,7 +11,10 @@ function required(name: string, value: string | undefined): string {
 }
 
 export const serverEnv = {
+  /** 끝 슬래시 없이 설정할 것 — `${base}/member/...` 형태로 이어붙인다. */
   backendBaseUrl: required("BACKEND_API_BASE_URL", process.env.BACKEND_API_BASE_URL),
   authCookieName: process.env.AUTH_COOKIE_NAME ?? "mc_admin_token",
+  /** 백엔드가 웹 로그인 시 내려주는 refresh 쿠키 이름 (그대로 보관했다가 되돌려 보낸다) */
+  refreshCookieName: "refresh_token",
   cookieSecure: process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production",
 };
