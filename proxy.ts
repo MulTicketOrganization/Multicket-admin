@@ -12,6 +12,8 @@ const PROTECTED_PREFIXES = [
   "/members",
   "/performances",
   "/inquiries",
+  "/reports",
+  "/failed-events",
   "/revenue",
   "/notices",
   "/keywords",

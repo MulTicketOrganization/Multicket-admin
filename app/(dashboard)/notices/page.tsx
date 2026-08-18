@@ -12,7 +12,7 @@ export default function NoticesPage() {
     <>
       <PageHeader
         title="공고 관리"
-        description="취소·환불 규정과 정산 방법 안내를 등록합니다. 등록할 때마다 새 이력이 쌓이고 최신 공고가 노출됩니다."
+        description="취소·환불 규정, 정산 안내, 앱 업데이트·긴급 점검 안내를 등록합니다. 등록할 때마다 새 이력이 쌓이고 최신 공고가 노출됩니다."
       />
       <NoticeManager />
     </>

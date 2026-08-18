@@ -8,6 +8,9 @@ import { toast } from "sonner";
 
 import {
   flattenPerformancePages,
+  performanceRunState,
+  runStateLabel,
+  runStateVariant,
   usePerformanceList,
   type PerformanceListItem,
 } from "@/entities/performance";
@@ -25,7 +28,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { usePerformanceFilters } from "@/features/performance-list-filter";
 import { formatDate } from "@/shared/lib/format";
 
-const COLUMN_COUNT = 7;
+const COLUMN_COUNT = 8;
 
 export function PerformanceListTable() {
   const { filters } = usePerformanceFilters();
@@ -55,7 +58,8 @@ export function PerformanceListTable() {
             <TableHead className="w-28">장르</TableHead>
             <TableHead className="w-56">기간</TableHead>
             <TableHead className="w-36">작성자</TableHead>
-            <TableHead className="w-20">상태</TableHead>
+            <TableHead className="w-24">공연 상태</TableHead>
+            <TableHead className="w-20">노출</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -101,6 +105,7 @@ export function PerformanceListTable() {
 function PerformanceRow({ performance: p }: { performance: PerformanceListItem }) {
   const router = useRouter();
   const href = `/performances/${p.id}`;
+  const runState = performanceRunState(p.startDate, p.endDate);
 
   const handleRowClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
     if ((e.target as HTMLElement).closest("a, button")) return;
@@ -152,6 +157,13 @@ function PerformanceRow({ performance: p }: { performance: PerformanceListItem }
           </Link>
         ) : (
           <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {runState ? (
+          <Badge variant={runStateVariant[runState]}>{runStateLabel[runState]}</Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
         )}
       </TableCell>
       <TableCell>

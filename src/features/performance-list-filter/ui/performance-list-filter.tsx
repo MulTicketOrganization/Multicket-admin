@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import { GENRES, REGIONS, type Genre, type Region } from "@/entities/performance";
+import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
   Select,
@@ -29,6 +30,7 @@ export function PerformanceListFilter() {
     genre,
     region,
     deletedSelect,
+    memberId,
     selectToDeleted,
     update,
   } = usePerformanceFilters();
@@ -43,70 +45,91 @@ export function PerformanceListFilter() {
   }, [debouncedTitle]);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px_160px_140px]">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={localTitle}
-          onChange={(e) => setLocalTitle(e.target.value)}
-          placeholder="공연 제목 검색"
-          className="pl-9"
-          aria-label="공연 검색"
-        />
+    <div className="space-y-3">
+      {/* 창작자 상세에서 "등록 공연" 을 눌러 들어온 경우의 컨텍스트 표시 */}
+      {memberId != null && (
+        <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs">
+          <span className="text-muted-foreground">
+            크리에이터 <span className="font-mono text-foreground">#{memberId}</span> 의
+            공연만 표시 중입니다.
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="ml-auto h-7"
+            onClick={() => update({ memberId: null })}
+          >
+            <X />
+            해제
+          </Button>
+        </div>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px_160px_140px]">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={localTitle}
+            onChange={(e) => setLocalTitle(e.target.value)}
+            placeholder="공연 제목 검색"
+            className="pl-9"
+            aria-label="공연 검색"
+          />
+        </div>
+
+        <Select
+          value={genre ?? ALL_SENTINEL}
+          onValueChange={(v) =>
+            update({ genre: v === ALL_SENTINEL ? null : (v as Genre) })
+          }
+        >
+          <SelectTrigger aria-label="장르 필터">
+            <SelectValue placeholder="장르" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_SENTINEL}>전체 장르</SelectItem>
+            {GENRES.map((g) => (
+              <SelectItem key={g} value={g}>
+                {g}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* 백엔드 목록 필터는 시/도가 아니라 권역 단위 */}
+        <Select
+          value={region ?? ALL_SENTINEL}
+          onValueChange={(v) =>
+            update({ region: v === ALL_SENTINEL ? null : (v as Region) })
+          }
+        >
+          <SelectTrigger aria-label="권역 필터">
+            <SelectValue placeholder="권역" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_SENTINEL}>전체 권역</SelectItem>
+            {REGIONS.map((r) => (
+              <SelectItem key={r} value={r}>
+                {r}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={deletedSelect}
+          onValueChange={(v) => update({ deleted: selectToDeleted(v as DeletedValue) })}
+        >
+          <SelectTrigger aria-label="활성 / 삭제 필터">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={DELETED_VALUE.ALL}>전체</SelectItem>
+            <SelectItem value={DELETED_VALUE.ACTIVE}>활성만</SelectItem>
+            <SelectItem value={DELETED_VALUE.DELETED}>삭제됨만</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-
-      <Select
-        value={genre ?? ALL_SENTINEL}
-        onValueChange={(v) =>
-          update({ genre: v === ALL_SENTINEL ? null : (v as Genre) })
-        }
-      >
-        <SelectTrigger aria-label="장르 필터">
-          <SelectValue placeholder="장르" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL_SENTINEL}>전체 장르</SelectItem>
-          {GENRES.map((g) => (
-            <SelectItem key={g} value={g}>
-              {g}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* 백엔드 목록 필터는 시/도가 아니라 권역 단위 */}
-      <Select
-        value={region ?? ALL_SENTINEL}
-        onValueChange={(v) =>
-          update({ region: v === ALL_SENTINEL ? null : (v as Region) })
-        }
-      >
-        <SelectTrigger aria-label="권역 필터">
-          <SelectValue placeholder="권역" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL_SENTINEL}>전체 권역</SelectItem>
-          {REGIONS.map((r) => (
-            <SelectItem key={r} value={r}>
-              {r}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={deletedSelect}
-        onValueChange={(v) => update({ deleted: selectToDeleted(v as DeletedValue) })}
-      >
-        <SelectTrigger aria-label="활성 / 삭제 필터">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={DELETED_VALUE.ALL}>전체</SelectItem>
-          <SelectItem value={DELETED_VALUE.ACTIVE}>활성만</SelectItem>
-          <SelectItem value={DELETED_VALUE.DELETED}>삭제됨만</SelectItem>
-        </SelectContent>
-      </Select>
     </div>
   );
 }

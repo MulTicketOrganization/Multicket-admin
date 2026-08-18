@@ -46,6 +46,7 @@ export const LoginType = {
   GOOGLE: "GOOGLE",
   KAKAO: "KAKAO",
   NAVER: "NAVER",
+  APPLE: "APPLE",
 } as const;
 export type LoginType = (typeof LoginType)[keyof typeof LoginType];
 
@@ -83,6 +84,8 @@ export interface MemberDetail {
   genres?: string[] | null;
   /** 선호 지역 */
   area?: string | null;
+  /** 본인인증을 마친 회원만 값이 있다 */
+  phoneNumber?: string | null;
 }
 
 /** GET /admin/member/list 쿼리 파라미터 */

@@ -68,4 +68,17 @@ export const loginTypeLabel: Record<LoginType, string> = {
   [LoginType.GOOGLE]: "Google",
   [LoginType.KAKAO]: "Kakao",
   [LoginType.NAVER]: "Naver",
+  [LoginType.APPLE]: "Apple",
 };
+
+/**
+ * 휴대폰 번호 표시.
+ * 본인인증 전 회원은 값이 없어 "-" 로 떨어진다.
+ */
+export function formatPhoneNumber(phone: string | null | undefined): string {
+  if (!phone) return "-";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return phone;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { APP_NAME } from "@/shared/config/constants";
 import { cn } from "@/shared/lib/utils";
@@ -10,6 +10,7 @@ import { ADMIN_NAV_GROUPS, isNavItemActive } from "../model/nav-items";
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r bg-card">
@@ -30,7 +31,7 @@ export function AdminSidebar() {
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const active = isNavItemActive(item, pathname);
+                const active = isNavItemActive(item, pathname, searchParams);
                 return (
                   <Link
                     key={item.href}
