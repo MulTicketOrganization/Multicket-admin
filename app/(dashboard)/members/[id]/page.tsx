@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { MemberDetailCard } from "@/widgets/member-detail-card";
+import { MemberPerformances } from "@/widgets/member-performances";
 import { Button } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
 
@@ -37,6 +38,7 @@ export default async function MemberDetailPage({ params }: MemberDetailPageProps
         }
       />
       <MemberDetailCard memberId={memberId} />
+      <MemberPerformances memberId={memberId} />
     </>
   );
 }

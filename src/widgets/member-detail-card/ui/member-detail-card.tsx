@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pencil, AlertTriangle } from "lucide-react";
 
 import {
+  formatPhoneNumber,
   genderLabel,
   loginTypeLabel,
   memberStatusLabel,
@@ -114,7 +115,8 @@ function MemberDetailContent({ member }: { member: MemberDetail }) {
 
           <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
             <DetailField label="회원 ID" value={String(member.id)} mono />
-            <DetailField label="로그인 방식" value={loginTypeLabel[member.loginType]} />
+            <DetailField label="연락처" value={formatPhoneNumber(member.phoneNumber)} />
+            <DetailField label="가입 경로" value={loginTypeLabel[member.loginType]} />
             <DetailField
               label="성별"
               value={member.gender ? genderLabel[member.gender] : "-"}
