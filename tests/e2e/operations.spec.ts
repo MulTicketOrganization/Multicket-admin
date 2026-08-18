@@ -11,6 +11,7 @@ import {
   mockMe,
   mockMonthlyRevenue,
   mockNoticeCreate,
+  mockUrgentNotice,
 } from "./helpers/mock-backend";
 import { loginAs } from "./helpers/session";
 
@@ -82,6 +83,7 @@ test.describe("operations", () => {
 
   test("공고: 내용을 입력해야 등록 버튼이 활성화된다", async ({ page }) => {
     await mockLatestNotice(page, "기존 환불 규정");
+    await mockUrgentNotice(page, null);
 
     let created: { type: string; content: string } | null = null;
     await mockNoticeCreate(page, (body) => {
@@ -102,6 +104,61 @@ test.describe("operations", () => {
       type: "CANCEL_REFUND_PAID",
       content: "새 환불 규정 본문",
     });
+  });
+
+  test("공고: 긴급 점검은 노출 종료 시각을 넣어야 등록된다", async ({ page }) => {
+    await mockLatestNotice(page, "기존 환불 규정");
+    await mockUrgentNotice(page, null);
+
+    let created: { type: string; content: string; expireDate?: string } | null = null;
+    await mockNoticeCreate(page, (body) => {
+      created = body;
+    });
+
+    await page.goto("/notices");
+    await page.getByLabel("공고 타입").click();
+    await page.getByRole("option", { name: "긴급 점검 안내" }).click();
+
+    await page.getByLabel("내용").fill("서버 점검 중입니다.");
+
+    // 만료 시각 없이는 아직 등록할 수 없다
+    const submit = page.getByRole("button", { name: "공고 등록" });
+    await expect(submit).toBeDisabled();
+
+    await page.getByLabel(/노출 종료 시각/).fill("2026-09-01T03:00");
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    await expect(page.getByText(/공고를 등록했습니다/)).toBeVisible();
+    // datetime-local 은 초가 없어 LocalDateTime 포맷으로 보정해 보낸다
+    expect(created).toEqual({
+      type: "URGENT",
+      content: "서버 점검 중입니다.",
+      expireDate: "2026-09-01T03:00:00",
+    });
+  });
+
+  test("공고: 앱에 떠 있는 안내를 같은 화면에서 확인한다", async ({ page }) => {
+    await mockLatestNotice(page, "기존 환불 규정");
+    await mockUrgentNotice(page, {
+      type: "APP_UPDATE",
+      content: "최신 버전으로 업데이트해 주세요.",
+      expireDate: "2099-01-01T00:00:00",
+    });
+
+    await page.goto("/notices");
+    await expect(page.getByText("앱에 떠 있는 안내")).toBeVisible();
+    await expect(page.getByText("노출 중")).toBeVisible();
+    await expect(page.getByText("최신 버전으로 업데이트해 주세요.")).toBeVisible();
+  });
+
+  test("공고: 노출 중인 안내가 없으면 안내 문구를 보여준다", async ({ page }) => {
+    await mockLatestNotice(page, "기존 환불 규정");
+    await mockUrgentNotice(page, null);
+
+    await page.goto("/notices");
+    await expect(page.getByText("지금 앱에 떠 있는 안내가 없습니다.")).toBeVisible();
+    await expect(page.getByText("노출 중")).toHaveCount(0);
   });
 
   test("내 계정: 로그인한 관리자 정보를 보여준다", async ({ page }) => {
