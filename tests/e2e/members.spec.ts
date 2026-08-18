@@ -2,10 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import {
   SAMPLE_MEMBER,
+  SAMPLE_PERFORMANCE,
   mockMe,
   mockMemberChange,
   mockMemberDetail,
   mockMemberList,
+  mockPerformanceList,
 } from "./helpers/mock-backend";
 import { loginAs } from "./helpers/session";
 
@@ -76,5 +78,57 @@ test.describe("members", () => {
     await page.goto("/members");
 
     await expect(page.getByText("조건에 맞는 회원이 없습니다.")).toBeVisible();
+  });
+
+  test("상세에 연락처와 가입 경로가 표시된다", async ({ page }) => {
+    const appleUser = {
+      ...SAMPLE_MEMBER,
+      memberType: "AUDIENCE" as const,
+      loginType: "APPLE" as const,
+      phoneNumber: "01012345678",
+    };
+    await mockMemberDetail(page, appleUser);
+    await mockPerformanceList(page, []);
+
+    await page.goto("/members/1");
+    await expect(page.getByText("연락처")).toBeVisible();
+    // 하이픈 없이 내려와도 화면에서는 포맷해 보여준다
+    await expect(page.getByText("010-1234-5678")).toBeVisible();
+    await expect(page.getByText("가입 경로")).toBeVisible();
+    await expect(page.getByText("Apple", { exact: true })).toBeVisible();
+  });
+
+  test("본인인증 전 회원은 연락처가 - 로 표시된다", async ({ page }) => {
+    await mockMemberDetail(page, { ...SAMPLE_MEMBER, phoneNumber: null });
+    await mockPerformanceList(page, []);
+
+    await page.goto("/members/1");
+    const contact = page.locator("dd").filter({ hasText: /^-$/ });
+    await expect(contact.first()).toBeVisible();
+  });
+
+  test("크리에이터 상세에만 등록 공연 목록이 붙는다", async ({ page }) => {
+    await mockMemberDetail(page, SAMPLE_MEMBER); // CREATOR
+    await mockPerformanceList(page, [SAMPLE_PERFORMANCE]);
+
+    await page.goto("/members/1");
+    await expect(page.getByText("등록 공연")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: SAMPLE_PERFORMANCE.title }),
+    ).toBeVisible();
+
+    // 공연 관리로 넘어가면 해당 크리에이터 필터가 걸린 채로 열린다
+    await page.getByRole("link", { name: "공연 관리에서 보기" }).click();
+    await expect(page).toHaveURL(/\/performances\?memberId=1/);
+    await expect(page.getByText(/크리에이터.*공연만 표시 중입니다/)).toBeVisible();
+  });
+
+  test("관객 상세에는 등록 공연 섹션이 없다", async ({ page }) => {
+    await mockMemberDetail(page, { ...SAMPLE_MEMBER, memberType: "AUDIENCE" as const });
+    await mockPerformanceList(page, [SAMPLE_PERFORMANCE]);
+
+    await page.goto("/members/1");
+    await expect(page.getByText(SAMPLE_MEMBER.email)).toBeVisible();
+    await expect(page.getByText("등록 공연")).toHaveCount(0);
   });
 });
