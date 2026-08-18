@@ -78,10 +78,11 @@ export interface MockMember {
   email: string;
   memberType: "AUDIENCE" | "CREATOR" | "MASTER";
   memberStatus: "PENDING" | "COMPLETE" | "FROZEN" | "BANNED" | "DELETED";
-  loginType: "LOCAL" | "GOOGLE" | "KAKAO" | "NAVER";
+  loginType: "LOCAL" | "GOOGLE" | "KAKAO" | "NAVER" | "APPLE";
   deleted: boolean;
   createDate: string;
   lastLoginAt: string | null;
+  phoneNumber?: string | null;
 }
 
 export const SAMPLE_MEMBER: MockMember = {
@@ -122,6 +123,7 @@ export async function mockMemberDetail(page: Page, member: MockMember) {
     updateDate: member.createDate,
     genres: [],
     area: null,
+    phoneNumber: member.phoneNumber ?? null,
   };
   await page.route("**/api/backend/admin/member/detail*", (route) =>
     route.fulfill(fulfillJson(200, { msg: "OK", data: detail })),
@@ -354,6 +356,21 @@ export async function mockKeywordUpdate(
   });
 }
 
+/** GET /notice/urgent — 앱 폴링 공고 (APP_UPDATE / URGENT). null 이면 노출 중인 안내 없음. */
+export async function mockUrgentNotice(
+  page: Page,
+  notice: { type: "APP_UPDATE" | "URGENT"; content: string; expireDate: string } | null = null,
+) {
+  await page.route("**/api/backend/notice/urgent", (route) =>
+    route.fulfill(
+      fulfillJson(200, {
+        msg: "OK",
+        data: notice ? { id: 9, createDate: "2026-05-01T10:00:00", ...notice } : null,
+      }),
+    ),
+  );
+}
+
 export async function mockLatestNotice(page: Page, content: string | null = "환불 규정 본문") {
   await page.route("**/api/backend/notice*", (route) =>
     route.fulfill(
@@ -374,11 +391,17 @@ export async function mockLatestNotice(page: Page, content: string | null = "환
 
 export async function mockNoticeCreate(
   page: Page,
-  onCall?: (body: { type: string; content: string }) => void,
+  onCall?: (body: { type: string; content: string; expireDate?: string }) => void,
 ) {
   await page.route("**/api/backend/admin/notice", async (route) => {
     if (onCall) {
-      onCall(route.request().postDataJSON() as { type: string; content: string });
+      onCall(
+        route.request().postDataJSON() as {
+          type: string;
+          content: string;
+          expireDate?: string;
+        },
+      );
     }
     await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
   });
@@ -462,5 +485,149 @@ export const SAMPLE_REVENUE: MockCreatorRevenue = {
 export async function mockMonthlyRevenue(page: Page, rows: MockCreatorRevenue[]) {
   await page.route("**/api/backend/admin/revenue/monthly*", (route) =>
     route.fulfill(fulfillJson(200, { msg: "OK", data: rows })),
+  );
+}
+
+/* ============================== Reports ============================== */
+
+export interface MockReport {
+  id: number;
+  performanceId: number;
+  performanceTitle: string;
+  reporterNickName: string;
+  status: "PENDING" | "COMPLETED" | "REJECTED";
+  createDate: string;
+}
+
+export const SAMPLE_REPORT: MockReport = {
+  id: 1,
+  performanceId: 1,
+  performanceTitle: "테스트 공연",
+  reporterNickName: "신고자",
+  status: "PENDING",
+  createDate: "2026-05-19T13:00:00",
+};
+
+export async function mockReportList(
+  page: Page,
+  reports: MockReport[],
+  { hasNext = false }: { hasNext?: boolean } = {},
+) {
+  await page.route("**/api/backend/admin/report/list*", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: { data: reports, hasNext } })),
+  );
+}
+
+export async function mockReportDetail(
+  page: Page,
+  report: MockReport,
+  overrides: Record<string, unknown> = {},
+) {
+  const detail = {
+    ...report,
+    reporterId: 2,
+    reporterEmail: "reporter@multicket.com",
+    reason: "공연 정보가 실제와 다릅니다.",
+    creatorId: 1,
+    creatorNickName: "테스터",
+    handledById: null,
+    handledByNickName: null,
+    opinion: null,
+    handledAt: null,
+    ...overrides,
+  };
+  await page.route(`**/api/backend/admin/report/${report.id}`, async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: detail }));
+  });
+}
+
+/** PATCH /admin/report/{id} */
+export async function mockReportProcess(
+  page: Page,
+  reportId: number,
+  onCall?: (body: { event: string; opinion: string; notifyCreator?: boolean }) => void,
+) {
+  await page.route(`**/api/backend/admin/report/${reportId}`, async (route) => {
+    if (route.request().method() !== "PATCH") {
+      await route.fallback();
+      return;
+    }
+    if (onCall) {
+      onCall(
+        route.request().postDataJSON() as {
+          event: string;
+          opinion: string;
+          notifyCreator?: boolean;
+        },
+      );
+    }
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
+  });
+}
+
+/* ============================== Failed events ============================== */
+
+export interface MockFailedEvent {
+  id: number;
+  eventType: string;
+  target: string | null;
+  originQueue: string | null;
+  status: "PENDING" | "COMPLETE";
+  occurredAt: string | null;
+}
+
+export const SAMPLE_FAILED_EVENT: MockFailedEvent = {
+  id: 7,
+  eventType: "SETTLEMENT_TRANSFER",
+  target: "settlement:1024",
+  originQueue: "settlement.transfer.q",
+  status: "PENDING",
+  occurredAt: "2026-05-19T02:10:00",
+};
+
+export async function mockFailedEventList(
+  page: Page,
+  events: MockFailedEvent[],
+  { hasNext = false }: { hasNext?: boolean } = {},
+) {
+  await page.route("**/api/backend/admin/failed-event/list*", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: { data: events, hasNext } })),
+  );
+}
+
+export async function mockFailedEventDetail(page: Page, event: MockFailedEvent) {
+  const detail = {
+    ...event,
+    description: "정산 이체 처리 실패",
+    failureReason: "PG 응답 시간 초과",
+    createDate: "2026-05-19T02:10:05",
+    payload: { settlementId: 1024, amount: 350000 },
+  };
+  await page.route(`**/api/backend/admin/failed-event/${event.id}`, async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: detail }));
+  });
+}
+
+/** PATCH /admin/failed-event/{id}/retry · /complete */
+export async function mockFailedEventAction(
+  page: Page,
+  eventId: number,
+  action: "retry" | "complete",
+  onCall?: () => void,
+) {
+  await page.route(
+    `**/api/backend/admin/failed-event/${eventId}/${action}`,
+    async (route) => {
+      if (onCall) onCall();
+      await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
+    },
   );
 }
