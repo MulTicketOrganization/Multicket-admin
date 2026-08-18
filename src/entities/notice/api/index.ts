@@ -20,3 +20,11 @@ export async function createNotice(body: NoticeCreateRequest): Promise<void> {
 export async function getLatestNotice(type: NoticeType): Promise<Notice | null> {
   return apiFetch<Notice | null>("/notice", { method: "GET", query: { type } });
 }
+
+/**
+ * GET /notice/urgent — 앱이 폴링으로 가져가는 공고 (APP_UPDATE / URGENT).
+ * 만료(expireDate)가 지나지 않은 건만 내려온다. 없으면 null.
+ */
+export async function getUrgentNotice(): Promise<Notice | null> {
+  return apiFetch<Notice | null>("/notice/urgent", { method: "GET" });
+}
