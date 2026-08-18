@@ -4,8 +4,14 @@ import { useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
-import { NoticeType, noticeTypeDescription, noticeTypeLabel } from "@/entities/notice";
+import {
+  NoticeType,
+  noticeTypeDescription,
+  noticeTypeLabel,
+  requiresExpireDate,
+} from "@/entities/notice";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
   Select,
@@ -26,26 +32,36 @@ interface NoticeCreateFormProps {
 /**
  * 공고 등록 폼.
  * 백엔드는 append-only — 저장할 때마다 새 이력이 쌓이고 최신 것이 노출된다.
+ * APP_UPDATE / URGENT 는 만료 시각을 함께 넣어야 앱 폴링 조회에 잡힌다.
  */
 export function NoticeCreateForm({
   defaultType = NoticeType.CANCEL_REFUND_PAID,
 }: NoticeCreateFormProps) {
   const [type, setType] = useState<NoticeType>(defaultType);
   const [content, setContent] = useState("");
+  const [expireDate, setExpireDate] = useState("");
   const mutation = useCreateNotice();
 
+  const needsExpire = requiresExpireDate(type);
   const trimmed = content.trim();
-  const canSubmit = trimmed.length > 0 && !mutation.isPending;
+  const canSubmit =
+    trimmed.length > 0 && (!needsExpire || expireDate.length > 0) && !mutation.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     mutation.mutate(
-      { type, content: trimmed },
+      {
+        type,
+        content: trimmed,
+        // datetime-local 은 초가 없어 백엔드 LocalDateTime 포맷에 맞춰 보정한다
+        ...(needsExpire ? { expireDate: `${expireDate}:00` } : {}),
+      },
       {
         onSuccess: () => {
           toast.success(`"${noticeTypeLabel[type]}" 공고를 등록했습니다.`);
           setContent("");
+          setExpireDate("");
         },
         onError: (err) => {
           toast.error(err instanceof Error ? err.message : "공고 등록에 실패했습니다.");
@@ -72,6 +88,26 @@ export function NoticeCreateForm({
         </Select>
         <p className="text-xs text-muted-foreground">{noticeTypeDescription[type]}</p>
       </div>
+
+      {needsExpire && (
+        <div className="space-y-2">
+          <Label htmlFor="notice-expire">
+            노출 종료 시각 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="notice-expire"
+            type="datetime-local"
+            value={expireDate}
+            onChange={(e) => setExpireDate(e.target.value)}
+            className="sm:w-80"
+          />
+          <p className="text-xs text-muted-foreground">
+            이 시각이 지나면 앱에서 자동으로 사라집니다. 공고를 지우는 API 가 없어
+            <strong className="font-medium text-foreground"> 중간에 즉시 내릴 수는 없으니</strong>{" "}
+            보수적으로 잡아주세요.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="notice-content">내용</Label>
