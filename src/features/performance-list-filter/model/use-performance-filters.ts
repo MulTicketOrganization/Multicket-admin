@@ -15,6 +15,7 @@ const KEY_TITLE = "title";
 const KEY_GENRE = "genre";
 const KEY_REGION = "region";
 const KEY_DELETED = "deleted";
+const KEY_MEMBER = "memberId";
 
 export const ALL_SENTINEL = "_all_";
 
@@ -32,6 +33,12 @@ function isGenre(v: string | null): v is Genre {
 
 function isRegion(v: string | null): v is Region {
   return v != null && (REGIONS as readonly string[]).includes(v);
+}
+
+function parseMemberId(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
 function parseDeletedParam(raw: string | null): boolean | undefined {
@@ -63,6 +70,7 @@ interface Patch {
   genre?: Genre | null;
   region?: Region | null;
   deleted?: boolean | undefined;
+  memberId?: number | null;
 }
 
 export function usePerformanceFilters() {
@@ -78,6 +86,7 @@ export function usePerformanceFilters() {
   const genre = isGenre(genreRaw) ? genreRaw : null;
   const region = isRegion(regionRaw) ? regionRaw : null;
   const deleted = parseDeletedParam(deletedRaw);
+  const memberId = parseMemberId(searchParams.get(KEY_MEMBER));
 
   const filters = useMemo<PerformanceListFilters>(
     () => ({
@@ -85,8 +94,9 @@ export function usePerformanceFilters() {
       genre: genre ?? undefined,
       region: region ?? undefined,
       deleted,
+      memberId,
     }),
-    [title, genre, region, deleted],
+    [title, genre, region, deleted, memberId],
   );
 
   const update = useCallback(
@@ -111,6 +121,11 @@ export function usePerformanceFilters() {
         else next.set(KEY_DELETED, v);
       }
 
+      if (patch.memberId !== undefined) {
+        if (patch.memberId) next.set(KEY_MEMBER, String(patch.memberId));
+        else next.delete(KEY_MEMBER);
+      }
+
       const qs = next.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
@@ -123,6 +138,7 @@ export function usePerformanceFilters() {
     genre,
     region,
     deleted,
+    memberId,
     deletedSelect: deletedToSelect(deleted),
     selectToDeleted,
     update,
