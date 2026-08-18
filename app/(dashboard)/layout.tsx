@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { AdminSidebar } from "@/widgets/admin-sidebar";
 import { AdminHeader } from "@/widgets/admin-header";
@@ -14,7 +14,10 @@ import { AdminHeader } from "@/widgets/admin-header";
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-muted/20">
-      <AdminSidebar />
+      {/* 사이드바는 쿼리(회원 유형)로 활성 항목을 가리므로 useSearchParams 를 쓴다 */}
+      <Suspense fallback={<div className="hidden w-60 shrink-0 border-r bg-card md:block" />}>
+        <AdminSidebar />
+      </Suspense>
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminHeader />
         <main className="flex-1 overflow-y-auto px-6 py-6 sm:px-8">
