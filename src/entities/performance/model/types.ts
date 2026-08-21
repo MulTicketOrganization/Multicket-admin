@@ -172,3 +172,46 @@ export interface PerformanceDetail {
   memberType: MemberType | null;
   memberStatus: MemberStatus | null;
 }
+
+/* ------------------------------------------------------------------ *
+ * 공연 통계 (GET /admin/performance/{performanceId}/statistics)
+ * 공연 상세와는 별개의 API — 상세 화면에서 필요할 때 추가 호출한다.
+ * ------------------------------------------------------------------ */
+
+export const SessionSaleStatus = {
+  UPCOMING: "UPCOMING",
+  ON_SALE: "ON_SALE",
+  CLOSED: "CLOSED",
+} as const;
+export type SessionSaleStatus =
+  (typeof SessionSaleStatus)[keyof typeof SessionSaleStatus];
+
+/** 회차별 예매 현황 */
+export interface SessionStatistics {
+  ticketDateId: number;
+  enableDate: string;
+  capacity: number;
+  /** 현재 SUCCESS 처리된 주문의 매수 총합 */
+  totalSoldSeats: number;
+  /** PENDING(결제 대기 포함) + SUCCESS 매수 총합 */
+  currentReservationSeats: number;
+  /** 정원 - 현재 예매 인원 */
+  remainingSeats: number;
+  reservationCount: number;
+  cancelCount: number;
+  /** SUCCESS/CANCEL 주문의 paidAmount 합계 — 취소분은 환불된 만큼 이미 빠져 있다 */
+  revenue: number;
+  occupancyRate: number;
+  saleStatus: SessionSaleStatus;
+}
+
+export interface PerformanceStatistics {
+  performanceId: number;
+  performanceTitle: string;
+  totalReservationCount: number;
+  totalCancelCount: number;
+  /** 총 취소 수 / (총 예매 수 + 총 취소 수) * 100 */
+  cancelRate: number;
+  totalRevenue: number;
+  sessions: SessionStatistics[];
+}

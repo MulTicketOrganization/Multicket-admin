@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { PerformanceDetailCard } from "@/widgets/performance-detail-card";
+import { PerformanceStatistics } from "@/widgets/performance-statistics";
 import { Button } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
 
@@ -37,6 +38,7 @@ export default async function PerformanceDetailPage({ params }: PerformanceDetai
         }
       />
       <PerformanceDetailCard performanceId={performanceId} />
+      <PerformanceStatistics performanceId={performanceId} />
     </>
   );
 }
