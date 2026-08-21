@@ -1,9 +1,11 @@
 import {
+  Coins,
   FileText,
   Inbox,
   LayoutDashboard,
   Server,
   ShieldAlert,
+  Smartphone,
   Siren,
   Tags,
   Ticket,
@@ -80,13 +82,17 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "정산",
-    items: [{ href: "/revenue", label: "매출 조회", icon: Wallet }],
+    items: [
+      { href: "/revenue", label: "매출 조회", icon: Wallet },
+      { href: "/settlements", label: "정산 관리", icon: Coins },
+    ],
   },
   {
     title: "콘텐츠",
     items: [
       { href: "/notices", label: "공고 관리", icon: FileText },
       { href: "/keywords", label: "검색 키워드", icon: Tags },
+      { href: "/app-versions", label: "앱 버전", icon: Smartphone },
     ],
   },
   {
