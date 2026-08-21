@@ -1,40 +1,37 @@
 "use client";
 
-import { CircleAlert, Inbox, Server, Siren, UserCheck, Wallet } from "lucide-react";
+import {
+  CircleAlert,
+  Inbox,
+  Server,
+  ShoppingCart,
+  Siren,
+  Ticket,
+  UserCheck,
+  Users,
+  Wallet,
+} from "lucide-react";
 
 import { useJobInstances } from "@/entities/batch";
+import { useDashboardSummary } from "@/entities/dashboard";
 import { InquiryStatus, flattenInquiryPages, useInquiryList } from "@/entities/inquiry";
-import {
-  MemberStatus,
-  MemberType,
-  flattenMemberPages,
-  useMemberList,
-} from "@/entities/member";
 import { ReportStatus, flattenReportPages, useReportList } from "@/entities/report";
-import { netAmount, sumRevenue, useMonthlyRevenue } from "@/entities/revenue";
 import { StatCard } from "@/shared/ui/stat-card";
 import { formatNumber } from "@/shared/lib/format";
 
 /**
  * 대시보드 상단 KPI.
  *
- * 백엔드에 집계(count) 전용 API 가 없어 목록 API 의 첫 페이지로 대신한다.
- * 목록은 cursor 페이지네이션(10건 고정)이라 한 페이지를 다 채우면 "10+" 로 표기한다 —
- * 정확한 총계가 필요하면 백엔드에 카운트 API 추가가 필요하다.
+ * 회원·공연·매출 집계는 `GET /admin/dashboard` 의 정확한 총계를 쓴다.
+ * 신고·문의·배치는 아직 카운트 API 가 없어 목록 첫 페이지(10건 고정)로 대신하며,
+ * 페이지를 다 채우면 "10+" 로 표기해 총계가 아님을 드러낸다.
  */
 export function DashboardOverview() {
+  const summary = useDashboardSummary();
+
   const pendingInquiries = useInquiryList({ inquiryStatus: InquiryStatus.PENDING });
   const pendingReports = useReportList({ status: ReportStatus.PENDING });
-  const pendingCreators = useMemberList({
-    memberType: MemberType.CREATOR,
-    memberStatus: MemberStatus.PENDING,
-  });
   const incompleteJobs = useJobInstances(true);
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const revenue = useMonthlyRevenue(year, month);
 
   const inquiries = countFirstPages(
     pendingInquiries.data ? flattenInquiryPages(pendingInquiries.data.pages) : [],
@@ -44,23 +41,60 @@ export function DashboardOverview() {
     pendingReports.data ? flattenReportPages(pendingReports.data.pages) : [],
     pendingReports.data?.pages.at(-1)?.hasNext ?? false,
   );
-  const creators = countFirstPages(
-    pendingCreators.data ? flattenMemberPages(pendingCreators.data.pages) : [],
-    pendingCreators.data?.pages.at(-1)?.hasNext ?? false,
-  );
 
   const jobCount = incompleteJobs.data?.length ?? 0;
-  const totals = sumRevenue(revenue.data ?? []);
+  const s = summary.data;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <StatCard
+        label="오늘 판매"
+        value={`${formatNumber(s?.todaySalesCount ?? null)}건`}
+        hint="오늘 결제 확정된 주문 수"
+        icon={<ShoppingCart className="size-4" />}
+        loading={summary.isPending}
+      />
+      <StatCard
+        label="오늘 순매출"
+        value={`${formatNumber(s?.todayRevenue ?? null)}원`}
+        hint="취소·환불이 반영된 금액"
+        icon={<Wallet className="size-4" />}
+        href="/revenue"
+        loading={summary.isPending}
+      />
+      <StatCard
+        label="판매중 공연"
+        value={formatNumber(s?.onSalePerformanceCount ?? null)}
+        hint="현재 판매 기간에 걸쳐 있는 공연"
+        icon={<Ticket className="size-4" />}
+        href="/performances"
+        loading={summary.isPending}
+      />
+      <StatCard
         label="승인 대기 창작자"
-        value={creators.display}
-        hint={creators.count > 0 ? "가입 승인이 필요합니다" : "대기 중인 신청이 없습니다"}
+        value={formatNumber(s?.pendingCreatorCount ?? null)}
+        hint={
+          s && s.pendingCreatorCount > 0
+            ? "가입 승인이 필요합니다"
+            : "대기 중인 신청이 없습니다"
+        }
         icon={<UserCheck className="size-4" />}
         href="/members?type=CREATOR&status=PENDING"
-        loading={pendingCreators.isPending}
+        loading={summary.isPending}
+      />
+      <StatCard
+        label="가입 회원"
+        value={formatNumber(
+          s ? s.activeAudienceCount + s.activeCreatorCount : null,
+        )}
+        hint={
+          s
+            ? `관객 ${formatNumber(s.activeAudienceCount)} · 창작자 ${formatNumber(s.activeCreatorCount)}`
+            : "탈퇴 회원 제외"
+        }
+        icon={<Users className="size-4" />}
+        href="/members?type=AUDIENCE"
+        loading={summary.isPending}
       />
       <StatCard
         label="미처리 신고"
@@ -85,21 +119,6 @@ export function DashboardOverview() {
         icon={jobCount > 0 ? <CircleAlert className="size-4" /> : <Server className="size-4" />}
         href="/batch"
         loading={incompleteJobs.isPending}
-      />
-      <StatCard
-        label="이번 달 결제"
-        value={`${formatNumber(totals.payment)}원`}
-        hint={`${year}년 ${month}월`}
-        icon={<Wallet className="size-4" />}
-        href="/revenue"
-        loading={revenue.isPending}
-      />
-      <StatCard
-        label="이번 달 순매출"
-        value={`${formatNumber(netAmount(totals.payment, totals.cancel))}원`}
-        hint={`취소 ${formatNumber(totals.cancel)}원 차감`}
-        href="/revenue"
-        loading={revenue.isPending}
       />
     </div>
   );

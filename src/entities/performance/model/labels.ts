@@ -1,4 +1,4 @@
-import { CastStaff, DiscountType, TicketType } from "./types";
+import { CastStaff, DiscountType, SessionSaleStatus, TicketType } from "./types";
 
 export const castStaffLabel: Record<CastStaff, string> = {
   [CastStaff.CAST]: "출연진",
@@ -74,3 +74,15 @@ export function performanceRunState(
   if (end != null && today > end) return RunState.ENDED;
   return RunState.ONGOING;
 }
+
+export const sessionSaleStatusLabel: Record<SessionSaleStatus, string> = {
+  [SessionSaleStatus.UPCOMING]: "판매 예정",
+  [SessionSaleStatus.ON_SALE]: "판매중",
+  [SessionSaleStatus.CLOSED]: "판매 종료",
+};
+
+export const sessionSaleStatusVariant = {
+  [SessionSaleStatus.UPCOMING]: "muted",
+  [SessionSaleStatus.ON_SALE]: "warning",
+  [SessionSaleStatus.CLOSED]: "muted",
+} as const satisfies Record<SessionSaleStatus, string>;

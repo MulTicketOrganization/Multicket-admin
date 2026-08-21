@@ -356,55 +356,215 @@ export async function mockKeywordUpdate(
   });
 }
 
-/** GET /notice/urgent — 앱 폴링 공고 (APP_UPDATE / URGENT). null 이면 노출 중인 안내 없음. */
-export async function mockUrgentNotice(
+/* ============================== Dashboard ============================== */
+
+export interface MockDashboardSummary {
+  todaySalesCount: number;
+  todayRevenue: number;
+  activeAudienceCount: number;
+  activeCreatorCount: number;
+  pendingCreatorCount: number;
+  onSalePerformanceCount: number;
+}
+
+export const SAMPLE_DASHBOARD: MockDashboardSummary = {
+  todaySalesCount: 12,
+  todayRevenue: 480000,
+  activeAudienceCount: 340,
+  activeCreatorCount: 27,
+  pendingCreatorCount: 3,
+  onSalePerformanceCount: 15,
+};
+
+/** GET /admin/dashboard — 대시보드 집계 */
+export async function mockDashboardSummary(
   page: Page,
-  notice: { type: "APP_UPDATE" | "URGENT"; content: string; expireDate: string } | null = null,
+  summary: MockDashboardSummary = SAMPLE_DASHBOARD,
 ) {
+  await page.route("**/api/backend/admin/dashboard", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: summary })),
+  );
+}
+
+/* ============================== Notice ============================== */
+
+export interface MockNotice {
+  id: number;
+  type: string;
+  title: string;
+  content?: string;
+  writerId?: number | null;
+  writerEmail?: string | null;
+  createDate: string;
+  expireDate: string | null;
+  maintenanceStartDate?: string | null;
+  updatePolicy?: string | null;
+  targetPlatforms?: string[] | null;
+}
+
+export const SAMPLE_NOTICE: MockNotice = {
+  id: 1,
+  type: "CANCEL_REFUND_PAID",
+  title: "유료 공연 취소·환불 규정",
+  content: "환불 규정 본문",
+  writerId: 1,
+  writerEmail: "admin@multicket.com",
+  createDate: "2026-05-01T10:00:00",
+  expireDate: "2099-01-01T00:00:00",
+};
+
+/**
+ * GET /notice/urgent — 앱 폴링 공고 (APP_UPDATE / URGENT / MAINTENANCE).
+ * 백엔드가 **배열**을 돌려주며, 빈 배열이면 노출 중인 안내가 없다는 뜻이다.
+ */
+export async function mockUrgentNotices(page: Page, notices: MockNotice[] = []) {
   await page.route("**/api/backend/notice/urgent", (route) =>
-    route.fulfill(
-      fulfillJson(200, {
-        msg: "OK",
-        data: notice ? { id: 9, createDate: "2026-05-01T10:00:00", ...notice } : null,
-      }),
-    ),
+    route.fulfill(fulfillJson(200, { msg: "OK", data: notices })),
   );
 }
 
-export async function mockLatestNotice(page: Page, content: string | null = "환불 규정 본문") {
+/** GET /notice?type= — 타입별 최신 공고 (사용자 노출 미리보기) */
+export async function mockLatestNotice(page: Page, notice: MockNotice | null = SAMPLE_NOTICE) {
   await page.route("**/api/backend/notice*", (route) =>
-    route.fulfill(
-      fulfillJson(200, {
-        msg: "OK",
-        data: content
-          ? {
-              id: 1,
-              type: "CANCEL_REFUND_PAID",
-              content,
-              createDate: "2026-05-01T10:00:00",
-            }
-          : null,
-      }),
-    ),
+    route.fulfill(fulfillJson(200, { msg: "OK", data: notice })),
   );
 }
 
+/** GET /admin/notice — 관리자 공고 목록 (cursor) */
+export async function mockNoticeList(
+  page: Page,
+  notices: MockNotice[] = [SAMPLE_NOTICE],
+  { hasNext = false }: { hasNext?: boolean } = {},
+) {
+  await page.route("**/api/backend/admin/notice?**", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: { data: notices, hasNext } })),
+  );
+}
+
+/** GET /admin/notice/{id} — 관리자 공고 상세 */
+export async function mockNoticeDetail(page: Page, notice: MockNotice = SAMPLE_NOTICE) {
+  await page.route(`**/api/backend/admin/notice/${notice.id}`, (route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    return route.fulfill(fulfillJson(200, { msg: "OK", data: notice }));
+  });
+}
+
+/** POST /admin/notice — 공고 등록 */
 export async function mockNoticeCreate(
   page: Page,
-  onCall?: (body: { type: string; content: string; expireDate?: string }) => void,
+  onCall?: (body: Record<string, unknown>) => void,
 ) {
   await page.route("**/api/backend/admin/notice", async (route) => {
-    if (onCall) {
-      onCall(
-        route.request().postDataJSON() as {
-          type: string;
-          content: string;
-          expireDate?: string;
-        },
-      );
-    }
+    if (route.request().method() !== "POST") return route.fallback();
+    if (onCall) onCall(route.request().postDataJSON() as Record<string, unknown>);
     await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
   });
+}
+
+/* ============================== App version ============================== */
+
+export interface MockAppVersion {
+  id: number;
+  platform: "IOS" | "ANDROID";
+  version: string;
+  appliedDate: string;
+  updateNote: string | null;
+  createDate: string;
+}
+
+export const SAMPLE_APP_VERSION: MockAppVersion = {
+  id: 1,
+  platform: "IOS",
+  version: "1.2.0",
+  appliedDate: "2026-05-01",
+  updateNote: "예매 취소 화면 개선",
+  createDate: "2026-05-01T10:00:00",
+};
+
+/** GET /admin/app-version — 버전 이력 (배열) */
+export async function mockAppVersions(
+  page: Page,
+  versions: MockAppVersion[] = [SAMPLE_APP_VERSION],
+) {
+  await page.route("**/api/backend/admin/app-version**", async (route) => {
+    if (route.request().method() !== "GET") return route.fallback();
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: versions }));
+  });
+}
+
+/** POST /admin/app-version — 버전 등록 */
+export async function mockAppVersionCreate(
+  page: Page,
+  onCall?: (body: Record<string, unknown>) => void,
+) {
+  await page.route("**/api/backend/admin/app-version", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    if (onCall) onCall(route.request().postDataJSON() as Record<string, unknown>);
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
+  });
+}
+
+/* ============================== Settlement ============================== */
+
+export interface MockSettlement {
+  id: number;
+  performanceId: number;
+  performanceTitle: string;
+  creatorId: number;
+  creatorNickName: string;
+  status: "PENDING" | "SUCCESS" | "FAIL";
+  createDate: string;
+}
+
+export const SAMPLE_SETTLEMENT: MockSettlement = {
+  id: 7,
+  performanceId: 3,
+  performanceTitle: "레미제라블",
+  creatorId: 5,
+  creatorNickName: "창작자A",
+  status: "PENDING",
+  createDate: "2026-06-01T09:00:00",
+};
+
+/** GET /admin/settlement/list — cursor 목록 */
+export async function mockSettlementList(
+  page: Page,
+  settlements: MockSettlement[] = [SAMPLE_SETTLEMENT],
+  { hasNext = false }: { hasNext?: boolean } = {},
+) {
+  await page.route("**/api/backend/admin/settlement/list**", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: { data: settlements, hasNext } })),
+  );
+}
+
+/** GET /admin/settlement/{id} — 상세 */
+export async function mockSettlementDetail(
+  page: Page,
+  overrides: Record<string, unknown> = {},
+) {
+  await page.route(`**/api/backend/admin/settlement/${SAMPLE_SETTLEMENT.id}`, (route) =>
+    route.fulfill(
+      fulfillJson(200, {
+        msg: "OK",
+        data: {
+          ...SAMPLE_SETTLEMENT,
+          venueName: "블루스퀘어",
+          enableDate: "2026-06-20T19:30:00",
+          creatorEmail: "creator@multicket.com",
+          settlementAmount: 900000,
+          settlementDate: "2026-06-30T00:00:00",
+          totalSuccessAmount: 1000000,
+          totalCancelAmount: 0,
+          feeRatePercent: 10,
+          feeAmount: 100000,
+          finalAmount: 900000,
+          portoneTransferId: null,
+          successAt: null,
+          ...overrides,
+        },
+      }),
+    ),
+  );
 }
 
 export interface MockJobInstance {

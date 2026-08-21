@@ -17,12 +17,11 @@
   실제 백엔드 호출은 서버 사이드에서 나가기 때문. 다만 향후 클라이언트 직접 호출을 도입하면 필요.
 - [ ] 배포 도메인 확정 시 백엔드 `application.yml` allowed origins 에 추가 요청
 
-### 1.2 대시보드 집계 API 부재
-- 대시보드 KPI 를 목록 API 의 첫 페이지(10건 고정)로 대신하고 있어 정확한 총계를 표시할 수 없다.
-  현재는 10건을 채우면 `10+` 로 표기한다.
-- [ ] 추가 요청 후보:
-  - `GET /admin/stats/summary` — 총 회원 수, 총 공연 수, 대기 문의 수 등
-  - `GET /admin/inquiry/count?status=` — 상태별 문의 건수
+### 1.2 대시보드 집계 API — 부분 해결 (2026-08-21)
+- `GET /admin/dashboard` 가 생겨 **회원 · 공연 · 오늘 매출**은 정확한 총계를 쓴다. 배선 완료.
+- 아직 카운트 API 가 없는 지표는 여전히 목록 첫 페이지(10건)로 세고 `10+` 로 표기한다.
+- [ ] `GET /admin/report/count?status=` — 미처리 신고 건수
+- [ ] `GET /admin/inquiry/count?status=` — 상태별 문의 건수
 
 ### 1.3 MemberType 변경 API 부재
 - `POST /admin/member/change` 는 상태 전이 이벤트(`APPROVE`/`FREEZE`/`UNFREEZE`/`BAN`/`DELETE`)만 처리한다.
@@ -34,17 +33,40 @@
 - 프록시가 401 을 받으면 쿠키를 지워 다음 네비게이션에서 `/login` 으로 보내고 있다.
 - [ ] 명시적 `POST /auth/refresh` endpoint 추가 검토 (현재는 응답 헤더 자동 갱신만 있음)
 
-### 1.5 공고 조회 endpoint 부재 (admin)
-- `POST /admin/notice` 로 등록만 가능하고 admin 전용 조회가 없어, 현재 게시 중인 공고는
-  공용 `GET /notice` 로 확인한다. 취소·환불 공고는 `performanceId` 기준 분기라 타입만으로는 비어 올 수 있다.
-- [ ] `GET /admin/notice?type=` (또는 이력 목록) 추가 요청
+### 1.5 공고 조회 endpoint — 해결 (2026-08-21)
+- `GET /admin/notice` (목록, 작성자 포함) · `GET/PATCH/DELETE /admin/notice/{id}` 가 생겨
+  목록 · 상세 · 수정 · 삭제를 모두 붙였다.
+- 같은 시점에 스키마가 **깨지는 방향으로 바뀌었다** — `title` 필수 추가, `expireDate` 가
+  모든 타입 공통 필수로 변경, `MAINTENANCE` 타입 신설, `APP_UPDATE` 의 `updatePolicy` 와
+  폴링 타입의 `targetPlatforms` 필수화, `GET /notice/urgent` 가 단건 → **배열**.
+  전부 반영했다.
+- [ ] `DELETE /admin/notice/{id}` 가 하드 삭제라 복구 불가 — 의도한 정책인지 확인
+- [ ] `GET /notice/list` 의 **관객/창작자 대상 구분 필드** 요청 (앱 시안이 2탭)
 
 ### 1.6 크리에이터 통계·정산 API 의 소유권 제한
 - `/creator/dashboard/{id}`, `/creator/reservations/**`, `GET /api/business-auth` 는 "본인 것"만 조회 가능.
 - MASTER 가 남의 공연/계좌를 조회할 수 있는지 미확인 → 가능하지 않다면 admin 화면에서 쓸 수 없다.
 - [ ] MASTER 소유권 우회 가능 여부 확인 → 불가 시 `/admin/**` 에 동일 기능 추가 요청
 
-### 1.7 백엔드 알려진 이슈
+### 1.7 주문 · 정산 · 앱 버전 API (2026-08-21 신설분 반영)
+- `GET /admin/order/list` · `/detail`, `POST /admin/order/{id}/cancel`,
+  `PATCH /admin/order/{id}/refund` 배선 완료 (회원 상세의 "구매 / 주문 내역").
+- `GET /admin/settlement/list` · `/{id}`, `POST /{id}/transfer-request` 배선 완료 (`/settlements`).
+- `GET/POST/PATCH /admin/app-version` 배선 완료 (`/app-versions`).
+- `GET /admin/performance/{id}/statistics` 배선 완료 (공연 상세 하단).
+- [ ] **환불 예상액 조회 API 부재 (블로킹에 가까움)** — `PATCH /admin/order/{id}/refund` 의
+  `amount` 가 "관람일 기준 환불 정책으로 계산된 예상 환불액과 일치해야" 하는데 그 값을
+  알려주는 API 가 없다. 현재는 운영자가 손으로 입력하고 틀리면 400 이 난다.
+- [ ] `GET /admin/order/list` 의 `memberId` 를 optional 로 — 전역 주문 목록 화면을 만들 수 없다
+- [ ] `PATCH /admin/app-version/{id}` 가 `updateNote` 만 수정 가능 — 버전/적용일자 오타를
+  고칠 방법도 지울 방법도 없다. `DELETE` 또는 전체 필드 수정 허용 요청
+- [ ] `GET /admin/app-version` 응답이 스웨거에는 단건(`AppVersionResponse`)으로 표기돼 있으나
+  설명·실제는 배열이다. 스키마 정정 요청 (프론트는 양쪽을 모두 받도록 방어해 둠)
+- [ ] `POST /admin/settlement/{id}/transfer-request` 의 PG 확정 일정 — 지금은 실제 이체 없이
+  상태 확인만 한다. 실제 이체가 시작되면 버튼 문구·확인 절차를 바꿔야 함
+- [ ] `GET/POST /admin/keyword` 의 응답 스키마가 `{}` 로 비어 있어 계약 검증 불가
+
+### 1.8 백엔드 알려진 이슈
 - [ ] 회원가입 기본 MemberType 이 `CREATOR` 인 점 정책 확인
 - [ ] `PaymentController` 비활성 상태 — 결제 관련 Admin 화면 보류
 
@@ -90,7 +112,7 @@ pnpm test:e2e
 - [ ] OAuth2 로그인 지원 (Google / Kakao / Naver) — 현재는 Local 만
 - [ ] 해외 공연 관리 화면 (admin 전용 endpoint 부재 — 백엔드 확인 필요)
 - [ ] 회원 활동 / 감사 로그 화면 (백엔드 API 추가 시)
-- [ ] 공고 이력 목록 (백엔드 조회 API 추가 시, 1.5 연동)
+- [ ] 공연 차단(`/api/blocks`) · 신고 접수 통계 화면 — 앱 쪽 진입점이 생긴 뒤 검토
 
 ### 4.2 UX / 품질
 - [ ] cursor 페이지네이션을 무한 스크롤로 바꿀지 결정 (현재 "더 보기" 버튼)

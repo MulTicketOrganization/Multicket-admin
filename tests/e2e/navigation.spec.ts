@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 import {
-  SAMPLE_MEMBER,
   SAMPLE_REPORT,
+  mockDashboardSummary,
   mockInquiryList,
   mockJobInstances,
   mockMe,
@@ -84,11 +84,10 @@ test.describe("navigation", () => {
     await expect(page.getByRole("heading", { name: "신고 관리" })).toBeVisible();
   });
 
-  test("대시보드에 승인 대기 창작자와 미처리 신고 지표가 뜬다", async ({ page }) => {
-    // 집계 API 가 없어 목록 첫 페이지로 세므로, hasNext 면 "N+" 로 표기한다
-    await mockMemberList(page, [{ ...SAMPLE_MEMBER, memberStatus: "PENDING" }], {
-      hasNext: true,
-    });
+  test("대시보드에 집계 지표와 목록 기반 지표가 함께 뜬다", async ({ page }) => {
+    await mockDashboardSummary(page);
+    await mockMemberList(page, []);
+    // 신고·문의는 아직 카운트 API 가 없어 목록 첫 페이지로 센다
     await mockReportList(page, [SAMPLE_REPORT]);
     await mockInquiryList(page, []);
     await mockJobInstances(page, []);
@@ -96,8 +95,11 @@ test.describe("navigation", () => {
 
     await page.goto("/dashboard");
 
+    // GET /admin/dashboard 의 정확한 총계
     const pendingCreators = page.getByRole("link", { name: /승인 대기 창작자/ });
-    await expect(pendingCreators).toContainText("1+");
+    await expect(pendingCreators).toContainText("3");
+    await expect(page.getByText("12건")).toBeVisible();
+    await expect(page.getByText("관객 340 · 창작자 27")).toBeVisible();
 
     const pendingReports = page.getByRole("link", { name: /미처리 신고/ });
     await expect(pendingReports).toContainText("1");
