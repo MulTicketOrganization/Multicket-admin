@@ -45,3 +45,23 @@ export function toDateParam(date: Date): string {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+
+/**
+ * 백엔드 LocalDateTime → `<input type="datetime-local">` 의 value.
+ * 백엔드는 타임존 없는 로컬 시각을 주므로 Date 로 파싱하지 않고 문자열을 자른다
+ * (Date 를 거치면 UTC 로 해석돼 9시간 틀어지는 브라우저가 있다).
+ */
+export function toDateTimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/.exec(iso);
+  return m ? `${m[1]}T${m[2]}` : "";
+}
+
+/**
+ * `<input type="datetime-local">` 의 value → 백엔드 LocalDateTime.
+ * datetime-local 은 초가 없어 `:00` 을 붙인다. 빈 값이면 undefined.
+ */
+export function toLocalDateTimeParam(value: string): string | undefined {
+  if (!value) return undefined;
+  return value.length === 16 ? `${value}:00` : value;
+}

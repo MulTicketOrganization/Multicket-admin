@@ -1,32 +1,76 @@
-import { apiFetch } from "@/shared/api";
-import type { Notice, NoticeCreateRequest, NoticeType } from "../model/types";
+import { apiFetch, type PagedResponse } from "@/shared/api";
+import type {
+  NoticeDetail,
+  NoticeListItem,
+  NoticeListQuery,
+  NoticeType,
+  NoticeWriteRequest,
+  PublicNotice,
+} from "../model/types";
 
-/**
- * POST /admin/notice — 공고 등록.
- * 저장할 때마다 이력이 쌓이며 기존 공고는 수정되지 않는다 (append-only).
- */
-export async function createNotice(body: NoticeCreateRequest): Promise<void> {
+/* ------------------------------------------------------------------ *
+ * 관리자 CRUD (/admin/notice**)
+ * ------------------------------------------------------------------ */
+
+/** GET /admin/notice — cursor 페이지네이션. 작성자(id/email) 포함. */
+export async function getNotices(
+  query: NoticeListQuery,
+): Promise<PagedResponse<NoticeListItem>> {
+  return apiFetch<PagedResponse<NoticeListItem>>("/admin/notice", {
+    method: "GET",
+    query: {
+      cursorId: query.cursorId,
+      type: query.type,
+      expireDate: query.expireDate,
+    },
+  });
+}
+
+/** GET /admin/notice/{id} */
+export async function getNoticeDetail(id: number): Promise<NoticeDetail> {
+  return apiFetch<NoticeDetail>(`/admin/notice/${id}`, { method: "GET" });
+}
+
+/** POST /admin/notice — 등록. 등록한 관리자가 작성자로 저장된다. */
+export async function createNotice(body: NoticeWriteRequest): Promise<void> {
   await apiFetch<void>("/admin/notice", { method: "POST", body });
 }
 
+/** PATCH /admin/notice/{id} — 기존 행을 그대로 수정 (이력을 새로 쌓지 않는다) */
+export async function updateNotice(
+  id: number,
+  body: NoticeWriteRequest,
+): Promise<void> {
+  await apiFetch<void>(`/admin/notice/${id}`, { method: "PATCH", body });
+}
+
+/** DELETE /admin/notice/{id} — **하드 삭제**. 복구 불가. */
+export async function deleteNotice(id: number): Promise<void> {
+  await apiFetch<void>(`/admin/notice/${id}`, { method: "DELETE" });
+}
+
+/* ------------------------------------------------------------------ *
+ * 사용자에게 실제로 나가는 것 확인용 (공용 endpoint)
+ * ------------------------------------------------------------------ */
+
 /**
  * GET /notice?type=... — 해당 타입의 최신 공고.
- * admin 전용 조회 API 가 없어 공용 endpoint 를 사용한다.
- * SETTLEMENT_GUIDE 는 CREATOR 이상 권한이 필요한데 MASTER 는 통과한다.
- *
- * CANCEL_REFUND_* 는 `type` 쿼리로 직접 조회되지 않고 `performanceId` 로만
- * 분기되므로, 아직 등록된 공고가 없으면 null 이 돌아올 수 있다.
+ * CANCEL_REFUND_* 는 `performanceId` 로만 분기되므로 type 조회로는 비어 올 수 있다.
  */
-export async function getLatestNotice(type: NoticeType): Promise<Notice | null> {
-  // 등록된 공고가 없으면 백엔드가 data:null 을 주는데, apiFetch 는 그때 undefined 를
-  // 돌려준다. react-query 는 undefined 를 거부하므로 null 로 좁혀서 넘긴다.
-  return (await apiFetch<Notice | null>("/notice", { method: "GET", query: { type } })) ?? null;
+export async function getLatestNotice(type: NoticeType): Promise<PublicNotice | null> {
+  return (
+    (await apiFetch<PublicNotice | null>("/notice", { method: "GET", query: { type } })) ??
+    null
+  );
 }
 
 /**
- * GET /notice/urgent — 앱이 폴링으로 가져가는 공고 (APP_UPDATE / URGENT).
- * 만료(expireDate)가 지나지 않은 건만 내려온다. 없으면 null.
+ * GET /notice/urgent — 앱이 폴링으로 가져가는 공고들.
+ *
+ * 만료되지 않았고 **요청자 플랫폼이 targetPlatforms 에 포함된** 건만 온다.
+ * 어드민은 브라우저(WEB)로 호출하므로 iOS/Android 전용 공고는 여기 안 잡힌다 —
+ * "지금 앱에 뭐가 떠 있는지" 의 근사치일 뿐이라는 점에 주의.
  */
-export async function getUrgentNotice(): Promise<Notice | null> {
-  return (await apiFetch<Notice | null>("/notice/urgent", { method: "GET" })) ?? null;
+export async function getUrgentNotices(): Promise<PublicNotice[]> {
+  return (await apiFetch<PublicNotice[] | null>("/notice/urgent", { method: "GET" })) ?? [];
 }
