@@ -2,7 +2,8 @@ import { apiFetch } from "@/shared/api";
 import type { MemberChangeRequest } from "../model/types";
 
 /**
- * POST /admin/member/change — 회원 상태 변경.
+ * POST /admin/member/change — 회원 상태 전이 이벤트 적용.
+ * body: { memberId, event } — 목표 상태가 아니라 이벤트를 보낸다.
  * 백엔드는 200 OK 만 반환 (data 없음).
  */
 export async function changeMemberStatus(body: MemberChangeRequest): Promise<void> {

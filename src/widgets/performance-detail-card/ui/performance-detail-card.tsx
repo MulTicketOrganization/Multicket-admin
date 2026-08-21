@@ -6,6 +6,8 @@ import { AlertTriangle, Calendar, Ticket } from "lucide-react";
 import {
   CastStaff,
   castStaffLabel,
+  discountTypeLabel,
+  formatDiscountValue,
   ticketTypeLabel,
   usePerformanceDetail,
   type CrewInfo,
@@ -14,39 +16,18 @@ import {
   type TicketInfo,
 } from "@/entities/performance";
 import {
-  MemberStatus,
-  MemberType,
   memberStatusLabel,
+  memberStatusVariant,
   memberTypeLabel,
+  memberTypeVariant,
 } from "@/entities/member";
+import { DeletePerformanceButton } from "@/features/performance-delete";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
-import { Badge, type BadgeProps } from "@/shared/ui/badge";
+import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { formatDate, formatDateTime, formatPrice } from "@/shared/lib/format";
-
-function memberStatusVariant(s: MemberStatus): BadgeProps["variant"] {
-  switch (s) {
-    case MemberStatus.COMPLETE:
-      return "success";
-    case MemberStatus.PENDING:
-      return "warning";
-    case MemberStatus.FROZEN:
-      return "destructive";
-  }
-}
-
-function memberTypeVariant(t: MemberType): BadgeProps["variant"] {
-  switch (t) {
-    case MemberType.MASTER:
-      return "default";
-    case MemberType.CREATOR:
-      return "secondary";
-    case MemberType.AUDIENCE:
-      return "muted";
-  }
-}
 
 export function PerformanceDetailCard({ performanceId }: { performanceId: number }) {
   const { data, isPending, isError, error } = usePerformanceDetail(performanceId);
@@ -135,7 +116,11 @@ function MainCard({ performance: p }: { performance: PerformanceDetail }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              {p.genre && <Badge variant="secondary">{p.genre}</Badge>}
+              {p.genres?.map((g) => (
+                <Badge key={g} variant="secondary">
+                  {g}
+                </Badge>
+              ))}
               {p.area && <Badge variant="outline">{p.area}</Badge>}
             </div>
 
@@ -144,6 +129,14 @@ function MainCard({ performance: p }: { performance: PerformanceDetail }) {
               <Calendar className="size-3.5" />
               {formatDate(p.startDate)} ~ {formatDate(p.endDate)}
             </p>
+          </div>
+
+          <div className="shrink-0">
+            <DeletePerformanceButton
+              performanceId={p.performanceId}
+              performanceTitle={p.title}
+              disabled={p.deleted}
+            />
           </div>
         </header>
 
@@ -155,6 +148,10 @@ function MainCard({ performance: p }: { performance: PerformanceDetail }) {
           <DetailField label="가격" value={formatPrice(p.price)} />
           <DetailField label="관람 연령" value={p.ageLimit != null ? `${p.ageLimit}세 이상` : "-"} />
           <DetailField label="러닝타임" value={p.runTime ?? "-"} />
+          <DetailField
+            label="예매 마감"
+            value={p.limitTime != null ? `공연 ${p.limitTime}시간 전` : "-"}
+          />
           <DetailField label="등록일" value={formatDate(p.createDate)} />
           <DetailField label="마지막 수정" value={formatDate(p.updateDate)} />
           <DetailField label="KOPIS 동기화" value={formatDateTime(p.syncedAt)} />
@@ -217,12 +214,12 @@ function WriterCard({ performance: p }: { performance: PerformanceDetail }) {
             )}
             <div className="flex gap-1.5 pt-1">
               {p.memberType && (
-                <Badge variant={memberTypeVariant(p.memberType)} className="text-[10px]">
+                <Badge variant={memberTypeVariant[p.memberType]} className="text-[10px]">
                   {memberTypeLabel[p.memberType]}
                 </Badge>
               )}
               {p.memberStatus && (
-                <Badge variant={memberStatusVariant(p.memberStatus)} className="text-[10px]">
+                <Badge variant={memberStatusVariant[p.memberStatus]} className="text-[10px]">
                   {memberStatusLabel[p.memberStatus]}
                 </Badge>
               )}
@@ -314,6 +311,27 @@ function TicketCard({ performance: p }: { performance: PerformanceDetail }) {
           </section>
         )}
 
+        {p.discounts && p.discounts.length > 0 && (
+          <section className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              할인 ({p.discounts.length})
+            </div>
+            <ul className="grid gap-1.5 text-sm sm:grid-cols-2">
+              {p.discounts.map((d) => (
+                <li
+                  key={d.id}
+                  className="flex items-center justify-between rounded-md border bg-card px-3 py-2"
+                >
+                  <span className="font-medium">{discountTypeLabel[d.discountType]}</span>
+                  <span className="text-muted-foreground">
+                    {formatDiscountValue(d.discountType, d.discountValue)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {p.ticketDates && p.ticketDates.length > 0 && (
           <section className="space-y-1.5">
             <div className="text-xs font-medium text-muted-foreground">
@@ -344,6 +362,10 @@ function TicketDateRow({ date }: { date: TicketDate }) {
   return (
     <li className="rounded border bg-muted/40 px-2 py-1 text-muted-foreground">
       {formatDateTime(date.enableDate)}
+      {date.amountLeft != null && (
+        <span className="ml-1.5 text-foreground/70">잔여 {date.amountLeft}</span>
+      )}
+      {date.purchaseDisabled && <span className="ml-1.5 text-destructive">판매중지</span>}
     </li>
   );
 }

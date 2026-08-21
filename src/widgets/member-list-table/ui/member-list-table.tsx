@@ -7,16 +7,16 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-  MemberStatus,
-  MemberType,
   flattenMemberPages,
   loginTypeLabel,
   memberStatusLabel,
+  memberStatusVariant,
   memberTypeLabel,
+  memberTypeVariant,
   useMemberList,
   type MemberListItem,
 } from "@/entities/member";
-import { Badge, type BadgeProps } from "@/shared/ui/badge";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
   Table,
@@ -31,28 +31,6 @@ import { useMemberFilters } from "@/features/member-list-filter";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
 
 const COLUMN_COUNT = 8;
-
-function statusVariant(s: MemberStatus): BadgeProps["variant"] {
-  switch (s) {
-    case MemberStatus.COMPLETE:
-      return "success";
-    case MemberStatus.PENDING:
-      return "warning";
-    case MemberStatus.FROZEN:
-      return "destructive";
-  }
-}
-
-function typeVariant(t: MemberType): BadgeProps["variant"] {
-  switch (t) {
-    case MemberType.MASTER:
-      return "default";
-    case MemberType.CREATOR:
-      return "secondary";
-    case MemberType.AUDIENCE:
-      return "muted";
-  }
-}
 
 export function MemberListTable() {
   const { filters } = useMemberFilters();
@@ -152,10 +130,10 @@ function MemberRow({ member: m }: { member: MemberListItem }) {
       </TableCell>
       <TableCell className="text-muted-foreground">{m.email}</TableCell>
       <TableCell>
-        <Badge variant={typeVariant(m.memberType)}>{memberTypeLabel[m.memberType]}</Badge>
+        <Badge variant={memberTypeVariant[m.memberType]}>{memberTypeLabel[m.memberType]}</Badge>
       </TableCell>
       <TableCell>
-        <Badge variant={statusVariant(m.memberStatus)}>
+        <Badge variant={memberStatusVariant[m.memberStatus]}>
           {memberStatusLabel[m.memberStatus]}
         </Badge>
       </TableCell>

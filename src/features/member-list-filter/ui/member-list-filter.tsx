@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Search } from "lucide-react";
 
 import {
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { useDebouncedValue } from "@/shared/hooks/use-debounced-value";
+import { useDebouncedValue, useSyncedState } from "@/shared/hooks";
 
 import { ALL_SENTINEL, useMemberFilters } from "../model/use-member-filters";
 
@@ -27,12 +27,8 @@ export function MemberListFilter() {
   const { keyword: urlKeyword, memberType, memberStatus, update } = useMemberFilters();
 
   // 입력 즉시 echo + 디바운스 후에만 URL push
-  const [localKeyword, setLocalKeyword] = useState(urlKeyword);
+  const [localKeyword, setLocalKeyword] = useSyncedState(urlKeyword);
   const debouncedKeyword = useDebouncedValue(localKeyword, KEYWORD_DEBOUNCE_MS);
-
-  useEffect(() => {
-    setLocalKeyword(urlKeyword);
-  }, [urlKeyword]);
 
   useEffect(() => {
     if (debouncedKeyword === urlKeyword) return;

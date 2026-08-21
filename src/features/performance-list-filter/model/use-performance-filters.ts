@@ -4,16 +4,18 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import {
-  Area,
   GENRES,
+  REGIONS,
   type Genre,
   type PerformanceListFilters,
+  type Region,
 } from "@/entities/performance";
 
 const KEY_TITLE = "title";
 const KEY_GENRE = "genre";
-const KEY_AREA = "area";
+const KEY_REGION = "region";
 const KEY_DELETED = "deleted";
+const KEY_MEMBER = "memberId";
 
 export const ALL_SENTINEL = "_all_";
 
@@ -29,8 +31,14 @@ function isGenre(v: string | null): v is Genre {
   return v != null && (GENRES as readonly string[]).includes(v);
 }
 
-function isArea(v: string | null): v is Area {
-  return v != null && (Object.values(Area) as string[]).includes(v);
+function isRegion(v: string | null): v is Region {
+  return v != null && (REGIONS as readonly string[]).includes(v);
+}
+
+function parseMemberId(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
 function parseDeletedParam(raw: string | null): boolean | undefined {
@@ -60,8 +68,9 @@ function selectToDeleted(v: DeletedValue): boolean | undefined {
 interface Patch {
   title?: string | null;
   genre?: Genre | null;
-  area?: Area | null;
+  region?: Region | null;
   deleted?: boolean | undefined;
+  memberId?: number | null;
 }
 
 export function usePerformanceFilters() {
@@ -71,21 +80,23 @@ export function usePerformanceFilters() {
 
   const title = searchParams.get(KEY_TITLE) ?? "";
   const genreRaw = searchParams.get(KEY_GENRE);
-  const areaRaw = searchParams.get(KEY_AREA);
+  const regionRaw = searchParams.get(KEY_REGION);
   const deletedRaw = searchParams.get(KEY_DELETED);
 
   const genre = isGenre(genreRaw) ? genreRaw : null;
-  const area = isArea(areaRaw) ? areaRaw : null;
+  const region = isRegion(regionRaw) ? regionRaw : null;
   const deleted = parseDeletedParam(deletedRaw);
+  const memberId = parseMemberId(searchParams.get(KEY_MEMBER));
 
   const filters = useMemo<PerformanceListFilters>(
     () => ({
       title: title || undefined,
       genre: genre ?? undefined,
-      area: area ?? undefined,
+      region: region ?? undefined,
       deleted,
+      memberId,
     }),
-    [title, genre, area, deleted],
+    [title, genre, region, deleted, memberId],
   );
 
   const update = useCallback(
@@ -100,14 +111,19 @@ export function usePerformanceFilters() {
         if (patch.genre) next.set(KEY_GENRE, patch.genre);
         else next.delete(KEY_GENRE);
       }
-      if (patch.area !== undefined) {
-        if (patch.area) next.set(KEY_AREA, patch.area);
-        else next.delete(KEY_AREA);
+      if (patch.region !== undefined) {
+        if (patch.region) next.set(KEY_REGION, patch.region);
+        else next.delete(KEY_REGION);
       }
       if (patch.deleted !== undefined || "deleted" in patch) {
         const v = deletedToParam(patch.deleted);
         if (v == null) next.delete(KEY_DELETED);
         else next.set(KEY_DELETED, v);
+      }
+
+      if (patch.memberId !== undefined) {
+        if (patch.memberId) next.set(KEY_MEMBER, String(patch.memberId));
+        else next.delete(KEY_MEMBER);
       }
 
       const qs = next.toString();
@@ -120,8 +136,9 @@ export function usePerformanceFilters() {
     filters,
     title,
     genre,
-    area,
+    region,
     deleted,
+    memberId,
     deletedSelect: deletedToSelect(deleted),
     selectToDeleted,
     update,

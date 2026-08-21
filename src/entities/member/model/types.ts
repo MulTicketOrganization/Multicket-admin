@@ -1,6 +1,6 @@
 /**
  * 회원 도메인 enum / 타입.
- * 출처: ADMIN_BACKEND.md §2.4 ~ §2.7, §3 Enum.
+ * 출처: https://multicket.duckdns.org/v3/api-docs (Admin 태그)
  * 모든 enum 은 `as const` 객체 + union type 패턴으로 정의 (tree-shake 친화적).
  */
 
@@ -15,8 +15,24 @@ export const MemberStatus = {
   PENDING: "PENDING",
   COMPLETE: "COMPLETE",
   FROZEN: "FROZEN",
+  BANNED: "BANNED",
+  DELETED: "DELETED",
 } as const;
 export type MemberStatus = (typeof MemberStatus)[keyof typeof MemberStatus];
+
+/**
+ * 회원 상태 "전이 이벤트".
+ * 백엔드는 목표 상태가 아니라 이벤트를 받는다 —
+ * 현재 상태에서 허용되지 않는 이벤트는 400 으로 거부된다.
+ */
+export const MemberEvent = {
+  APPROVE: "APPROVE",
+  FREEZE: "FREEZE",
+  UNFREEZE: "UNFREEZE",
+  BAN: "BAN",
+  DELETE: "DELETE",
+} as const;
+export type MemberEvent = (typeof MemberEvent)[keyof typeof MemberEvent];
 
 export const Gender = {
   MALE: "MALE",
@@ -30,6 +46,7 @@ export const LoginType = {
   GOOGLE: "GOOGLE",
   KAKAO: "KAKAO",
   NAVER: "NAVER",
+  APPLE: "APPLE",
 } as const;
 export type LoginType = (typeof LoginType)[keyof typeof LoginType];
 
@@ -63,6 +80,12 @@ export interface MemberDetail {
   lastLoginAt: string | null;
   createDate: string;
   updateDate: string;
+  /** 선호 장르 목록 */
+  genres?: string[] | null;
+  /** 선호 지역 */
+  area?: string | null;
+  /** 본인인증을 마친 회원만 값이 있다 */
+  phoneNumber?: string | null;
 }
 
 /** GET /admin/member/list 쿼리 파라미터 */
@@ -76,5 +99,17 @@ export interface MemberListQuery {
 /** POST /admin/member/change body */
 export interface MemberChangeRequest {
   memberId: number;
-  memberStatus: MemberStatus;
+  event: MemberEvent;
 }
+
+/**
+ * 현재 상태에서 적용 가능한 이벤트.
+ * 백엔드 전이 규칙을 UI 에서 미리 좁혀 400 을 줄인다 (최종 판단은 서버).
+ */
+export const ALLOWED_MEMBER_EVENTS: Record<MemberStatus, MemberEvent[]> = {
+  [MemberStatus.PENDING]: [MemberEvent.APPROVE, MemberEvent.BAN, MemberEvent.DELETE],
+  [MemberStatus.COMPLETE]: [MemberEvent.FREEZE, MemberEvent.BAN, MemberEvent.DELETE],
+  [MemberStatus.FROZEN]: [MemberEvent.UNFREEZE, MemberEvent.BAN, MemberEvent.DELETE],
+  [MemberStatus.BANNED]: [MemberEvent.UNFREEZE, MemberEvent.DELETE],
+  [MemberStatus.DELETED]: [],
+};
