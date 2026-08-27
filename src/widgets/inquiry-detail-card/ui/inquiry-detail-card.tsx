@@ -131,6 +131,8 @@ export function InquiryDetailCard({ inquiryId }: { inquiryId: number }) {
         </CardContent>
       </Card>
 
+      <ResponseCard inquiry={data} />
+
       <RefDetailCard detail={data.refDetail} />
 
       {!closed && (
@@ -141,6 +143,40 @@ export function InquiryDetailCard({ inquiryId }: { inquiryId: number }) {
         />
       )}
     </div>
+  );
+}
+
+/** 관리자 응답 — 처리 전에는 responder/responseContent/responseDate 가 모두 null 이다. */
+function ResponseCard({ inquiry }: { inquiry: InquiryDetail }) {
+  if (!inquiry.responseContent && !inquiry.responseDate) return null;
+
+  return (
+    <Card>
+      <CardContent className="space-y-3 py-5">
+        <h3 className="text-sm font-semibold">관리자 응답</h3>
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <Field
+            label="응답자"
+            value={
+              inquiry.responderId != null ? (
+                <Link
+                  href={`/members/${inquiry.responderId}`}
+                  className="hover:text-primary hover:underline underline-offset-4"
+                >
+                  {inquiry.responderNickName ?? `#${inquiry.responderId}`}
+                </Link>
+              ) : (
+                (inquiry.responderNickName ?? "-")
+              )
+            }
+          />
+          <Field label="응답일시" value={formatDateTime(inquiry.responseDate)} />
+        </dl>
+        <p className="whitespace-pre-wrap rounded-md border bg-muted/30 p-4 text-sm leading-relaxed">
+          {inquiry.responseContent || "-"}
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
