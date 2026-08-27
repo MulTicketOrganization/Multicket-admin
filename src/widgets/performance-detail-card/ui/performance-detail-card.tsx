@@ -7,7 +7,9 @@ import {
   CastStaff,
   castStaffLabel,
   discountTypeLabel,
+  formatArea,
   formatDiscountValue,
+  formatGenre,
   ticketTypeLabel,
   usePerformanceDetail,
   type CrewInfo,
@@ -118,10 +120,10 @@ function MainCard({ performance: p }: { performance: PerformanceDetail }) {
             <div className="flex flex-wrap items-center gap-1.5">
               {p.genres?.map((g) => (
                 <Badge key={g} variant="secondary">
-                  {g}
+                  {formatGenre(g)}
                 </Badge>
               ))}
-              {p.area && <Badge variant="outline">{p.area}</Badge>}
+              {p.area && <Badge variant="outline">{formatArea(p.area)}</Badge>}
             </div>
 
             <p className="text-sm text-muted-foreground">{p.venueName}</p>

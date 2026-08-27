@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, ExternalLink, Gavel } from "lucide-react";
 
 import {
+  formatReportReason,
   isReportClosed,
   reportStatusLabel,
   reportStatusVariant,
@@ -125,7 +126,7 @@ export function ReportDetailCard({ reportId }: { reportId: number }) {
           <section className="space-y-2">
             <h3 className="text-sm font-semibold">신고 사유</h3>
             <p className="whitespace-pre-wrap rounded-md border bg-muted/30 p-4 text-sm leading-relaxed">
-              {data.reason}
+              {formatReportReason(data.reason)}
             </p>
           </section>
 

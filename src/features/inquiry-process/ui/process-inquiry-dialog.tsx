@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import {
   InquiryEvent,
   InquiryType,
+  RESPONSE_CONTENT_MAX_LENGTH,
   inquiryEventLabel,
+  isValidResponseContent,
   type InquiryDetail,
 } from "@/entities/inquiry";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
+import { Textarea } from "@/shared/ui/textarea";
 
 import { useProcessInquiry } from "../model/use-process-inquiry";
 
@@ -50,6 +53,8 @@ export function ProcessInquiryDialog({
 }: ProcessInquiryDialogProps) {
   const [event, setEvent] = useState<InquiryEvent | null>(null);
   const [memberEvent, setMemberEvent] = useState<MemberEvent>(MemberEvent.APPROVE);
+  const [responseContent, setResponseContent] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
 
   // 다이얼로그가 열릴 때마다 선택 초기화 (effect 대신 렌더 중 상태 조정)
   const [wasOpen, setWasOpen] = useState(open);
@@ -58,6 +63,8 @@ export function ProcessInquiryDialog({
     if (open) {
       setEvent(null);
       setMemberEvent(MemberEvent.APPROVE);
+      setResponseContent("");
+      setRejectReason("");
     }
   }
 
@@ -66,13 +73,25 @@ export function ProcessInquiryDialog({
   const isMemberStatus = inquiry.inquiryType === InquiryType.MEMBER_STATUS;
   // MEMBER_STATUS + COMPLETE 일 때만 memberEvent 가 필수
   const needsMemberEvent = isMemberStatus && event === InquiryEvent.COMPLETE;
+  // MEMBER_STATUS + REJECT 일 때만 rejectReason 이 필수 (회원 삭제 안내 메일에 담긴다)
+  const needsRejectReason = isMemberStatus && event === InquiryEvent.REJECT;
   const isDestructive =
     event === InquiryEvent.REJECT || (needsMemberEvent && memberEvent === MemberEvent.BAN);
 
+  const canSubmit =
+    event != null &&
+    isValidResponseContent(responseContent) &&
+    (!needsRejectReason || rejectReason.trim().length > 0);
+
   const handleSubmit = () => {
-    if (!event) return;
+    if (!event || !canSubmit) return;
     mutation.mutate(
-      { event, ...(needsMemberEvent ? { memberEvent } : {}) },
+      {
+        event,
+        responseContent: responseContent.trim(),
+        ...(needsMemberEvent ? { memberEvent } : {}),
+        ...(needsRejectReason ? { rejectReason: rejectReason.trim() } : {}),
+      },
       {
         onSuccess: () => {
           toast.success(`문의를 "${inquiryEventLabel[event]}" 했습니다.`);
@@ -151,6 +170,38 @@ export function ProcessInquiryDialog({
           </div>
         )}
 
+        <div className="space-y-1.5">
+          <Label htmlFor="inquiry-response-content" className="text-xs font-medium">
+            응답 내용 <span className="text-destructive">*</span>
+          </Label>
+          <Textarea
+            id="inquiry-response-content"
+            value={responseContent}
+            onChange={(e) => setResponseContent(e.target.value)}
+            maxLength={RESPONSE_CONTENT_MAX_LENGTH}
+            placeholder="문의자에게 전달할 응답 내용을 입력하세요."
+            rows={3}
+          />
+          <p className="text-right text-[11px] text-muted-foreground">
+            {responseContent.length}/{RESPONSE_CONTENT_MAX_LENGTH}
+          </p>
+        </div>
+
+        {needsRejectReason && (
+          <div className="space-y-1.5">
+            <Label htmlFor="inquiry-reject-reason" className="text-xs font-medium">
+              거절 사유 <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="inquiry-reject-reason"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="회원 삭제 전 신청자에게 발송할 거절 사유입니다."
+              rows={2}
+            />
+          </div>
+        )}
+
         {isDestructive && (
           <p className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
@@ -173,7 +224,7 @@ export function ProcessInquiryDialog({
             type="button"
             variant={isDestructive ? "destructive" : "default"}
             onClick={handleSubmit}
-            disabled={!event || mutation.isPending}
+            disabled={!canSubmit || mutation.isPending}
           >
             {mutation.isPending && <Loader2 className="animate-spin" />}
             {mutation.isPending ? "처리 중..." : "처리하기"}

@@ -1,4 +1,17 @@
-import { ReportEvent, ReportStatus } from "./types";
+import { ReportEvent, ReportReason, ReportStatus } from "./types";
+
+export const reportReasonLabel: Record<ReportReason, string> = {
+  [ReportReason.COPYRIGHT_INFRINGEMENT]: "저작권 침해",
+  [ReportReason.FRAUD_OR_FALSE_INFORMATION]: "사기 · 허위 정보",
+  [ReportReason.INAPPROPRIATE_CONTENT]: "부적절한 콘텐츠",
+  [ReportReason.SPAM]: "스팸",
+  [ReportReason.ETC]: "기타",
+};
+
+/** 백엔드가 사유를 추가해도 화면이 깨지지 않도록 미지의 값은 코드를 그대로 보여준다 */
+export function formatReportReason(reason: string): string {
+  return reportReasonLabel[reason as ReportReason] ?? reason;
+}
 
 export const reportStatusLabel: Record<ReportStatus, string> = {
   [ReportStatus.PENDING]: "접수",

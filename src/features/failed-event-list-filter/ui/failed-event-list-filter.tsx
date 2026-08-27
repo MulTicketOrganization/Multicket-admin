@@ -6,7 +6,7 @@ import {
   FailedEventStatus,
   FailedEventType,
   failedEventStatusLabel,
-  failedEventTypeLabel,
+  formatEventType,
 } from "@/entities/failed-event";
 import { Button } from "@/shared/ui/button";
 import {
@@ -57,7 +57,7 @@ export function FailedEventListFilter() {
           <SelectItem value={ALL_SENTINEL}>전체 타입</SelectItem>
           {Object.values(FailedEventType).map((t) => (
             <SelectItem key={t} value={t}>
-              {failedEventTypeLabel[t]}
+              {formatEventType(t)}
             </SelectItem>
           ))}
         </SelectContent>

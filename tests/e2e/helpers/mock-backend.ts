@@ -170,7 +170,7 @@ export const SAMPLE_PERFORMANCE: MockPerformanceListItem = {
   venueName: "테스트 극장",
   startDate: "2026-06-01T19:00:00",
   endDate: "2026-06-30T22:00:00",
-  genres: ["연극"],
+  genres: ["PLAY"],
   deleted: false,
   memberId: 1,
   memberNickname: "테스터",
@@ -207,7 +207,7 @@ export async function mockPerformanceDetail(
     price: 50000,
     posterUrl: null,
     synopsis: "테스트용 시놉시스입니다.",
-    area: "서울특별시",
+    area: "SEOUL",
     genres: performance.genres,
     isOpenRun: false,
     isDaeHakRo: false,
@@ -258,6 +258,10 @@ export interface MockInquiry {
   inquiryStatus: "PENDING" | "COMPLETED" | "REJECTED";
   inquiryType: "MEMBER_STATUS" | "PERFORMANCE_CHECK" | "PERFORMANCE_DUPLICATE" | "GENERAL";
   inquiryRefId: number | null;
+  responderId?: number | null;
+  responderNickName?: string | null;
+  responseContent?: string | null;
+  responseDate?: string | null;
   createDate: string;
 }
 
@@ -288,12 +292,16 @@ export async function mockInquiryList(
 
 export async function mockInquiryDetail(page: Page, inquiry: MockInquiry) {
   const detail = {
+    responderId: null,
+    responderNickName: null,
+    responseContent: null,
+    responseDate: null,
+    refDetail: null,
     ...inquiry,
     writerId: 1,
     writerEmail: "tester@multicket.com",
     description: "가입 승인 부탁드립니다.",
     updateDate: inquiry.createDate,
-    refDetail: null,
   };
   await page.route(`**/api/backend/admin/inquiry/${inquiry.id}`, async (route) => {
     if (route.request().method() !== "GET") {
@@ -308,7 +316,7 @@ export async function mockInquiryDetail(page: Page, inquiry: MockInquiry) {
 export async function mockInquiryUpdate(
   page: Page,
   inquiryId: number,
-  onCall?: (body: { event: string; memberEvent?: string }) => void,
+  onCall?: (body: Record<string, unknown>) => void,
 ) {
   await page.route(`**/api/backend/admin/inquiry/${inquiryId}`, async (route) => {
     if (route.request().method() !== "PATCH") {
@@ -327,8 +335,10 @@ export async function mockInquiryUpdate(
 export async function mockKeywords(
   page: Page,
   keywords: Record<string, { active: string[]; inactive: string[] }> = {
-    GENRE: { active: ["연극"], inactive: ["아동가족극"] },
-    ELSE: { active: ["추천"], inactive: [] },
+    GENRE: { active: ["PLAY"], inactive: ["CHILDREN_FAMILY"] },
+    ISDAEHAKRO: { active: ["DAEHAKRO"], inactive: [] },
+    OVERSEA: { active: ["US"], inactive: [] },
+    FREE: { active: ["무료"], inactive: [] },
   },
 ) {
   await page.route("**/api/backend/admin/keyword", async (route) => {
@@ -733,19 +743,17 @@ export async function mockReportProcess(
 
 export interface MockFailedEvent {
   id: number;
+  eventId: string | null;
   eventType: string;
-  target: string | null;
-  originQueue: string | null;
-  status: "PENDING" | "COMPLETE";
+  status: "RECEIVED" | "DONE" | "FAILED" | "IGNORED";
   occurredAt: string | null;
 }
 
 export const SAMPLE_FAILED_EVENT: MockFailedEvent = {
   id: 7,
+  eventId: "3f1c9d0e-2b7a-4c55-9f11-8d2c6a7b4e10",
   eventType: "SETTLEMENT_TRANSFER",
-  target: "settlement:1024",
-  originQueue: "settlement.transfer.q",
-  status: "PENDING",
+  status: "FAILED",
   occurredAt: "2026-05-19T02:10:00",
 };
 
@@ -762,7 +770,6 @@ export async function mockFailedEventList(
 export async function mockFailedEventDetail(page: Page, event: MockFailedEvent) {
   const detail = {
     ...event,
-    description: "정산 이체 처리 실패",
     failureReason: "PG 응답 시간 초과",
     createDate: "2026-05-19T02:10:05",
     payload: { settlementId: 1024, amount: 350000 },

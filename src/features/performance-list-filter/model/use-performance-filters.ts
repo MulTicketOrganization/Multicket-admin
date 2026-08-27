@@ -4,11 +4,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
 import {
-  GENRES,
-  REGIONS,
-  type Genre,
+  Genre,
+  Region,
   type PerformanceListFilters,
-  type Region,
 } from "@/entities/performance";
 
 const KEY_TITLE = "title";
@@ -28,11 +26,11 @@ export const DELETED_VALUE = {
 export type DeletedValue = (typeof DELETED_VALUE)[keyof typeof DELETED_VALUE];
 
 function isGenre(v: string | null): v is Genre {
-  return v != null && (GENRES as readonly string[]).includes(v);
+  return v != null && (Object.values(Genre) as string[]).includes(v);
 }
 
 function isRegion(v: string | null): v is Region {
-  return v != null && (REGIONS as readonly string[]).includes(v);
+  return v != null && (Object.values(Region) as string[]).includes(v);
 }
 
 function parseMemberId(raw: string | null): number | undefined {

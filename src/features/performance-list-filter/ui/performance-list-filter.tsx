@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { Search, X } from "lucide-react";
 
-import { GENRES, REGIONS, type Genre, type Region } from "@/entities/performance";
+import { Genre, Region, genreLabel, regionLabel } from "@/entities/performance";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -88,9 +88,9 @@ export function PerformanceListFilter() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_SENTINEL}>전체 장르</SelectItem>
-            {GENRES.map((g) => (
+            {Object.values(Genre).map((g) => (
               <SelectItem key={g} value={g}>
-                {g}
+                {genreLabel[g]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -108,9 +108,9 @@ export function PerformanceListFilter() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_SENTINEL}>전체 권역</SelectItem>
-            {REGIONS.map((r) => (
+            {Object.values(Region).map((r) => (
               <SelectItem key={r} value={r}>
-                {r}
+                {regionLabel[r]}
               </SelectItem>
             ))}
           </SelectContent>

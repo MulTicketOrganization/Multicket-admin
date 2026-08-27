@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import {
   failedEventStatusLabel,
   failedEventStatusVariant,
-  failedEventTypeLabel,
   flattenFailedEventPages,
+  formatEventType,
   useFailedEventList,
   type FailedEventListItem,
 } from "@/entities/failed-event";
@@ -28,7 +28,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { useFailedEventFilters } from "@/features/failed-event-list-filter";
 import { formatDateTime } from "@/shared/lib/format";
 
-const COLUMN_COUNT = 6;
+const COLUMN_COUNT = 5;
 
 export function FailedEventListTable() {
   const { filters } = useFailedEventFilters();
@@ -39,7 +39,7 @@ export function FailedEventListTable() {
       toast.error(
         query.error instanceof Error
           ? query.error.message
-          : "실패 이벤트를 불러오지 못했습니다.",
+          : "이벤트 목록을 불러오지 못했습니다.",
       );
     }
   }, [query.isError, query.error]);
@@ -52,9 +52,8 @@ export function FailedEventListTable() {
         <TableHeader>
           <TableRow>
             <TableHead className="w-16">ID</TableHead>
-            <TableHead className="w-44">이벤트 타입</TableHead>
-            <TableHead>대상</TableHead>
-            <TableHead className="w-40">원본 큐</TableHead>
+            <TableHead className="w-52">이벤트 타입</TableHead>
+            <TableHead>이벤트 ID</TableHead>
             <TableHead className="w-40">발생 시각</TableHead>
             <TableHead className="w-24">상태</TableHead>
           </TableRow>
@@ -68,7 +67,7 @@ export function FailedEventListTable() {
                 colSpan={COLUMN_COUNT}
                 className="h-32 text-center text-sm text-muted-foreground"
               >
-                조건에 맞는 실패 이벤트가 없습니다.
+                조건에 맞는 이벤트가 없습니다.
               </TableCell>
             </TableRow>
           ) : (
@@ -117,18 +116,15 @@ function FailedEventRow({ event: e }: { event: FailedEventListItem }) {
     >
       <TableCell className="font-mono text-xs text-muted-foreground">{e.id}</TableCell>
       <TableCell>
-        <Badge variant="secondary">{failedEventTypeLabel[e.eventType]}</Badge>
+        <Badge variant="secondary">{formatEventType(e.eventType)}</Badge>
       </TableCell>
       <TableCell className="font-medium">
         <Link
           href={href}
-          className="text-foreground hover:text-primary hover:underline underline-offset-4"
+          className="font-mono text-xs text-foreground hover:text-primary hover:underline underline-offset-4"
         >
-          {e.target || "-"}
+          {e.eventId || "-"}
         </Link>
-      </TableCell>
-      <TableCell className="font-mono text-xs text-muted-foreground">
-        {e.originQueue || "-"}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
         {formatDateTime(e.occurredAt)}

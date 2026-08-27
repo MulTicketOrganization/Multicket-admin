@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import {
   flattenPerformancePages,
+  formatGenre,
   performanceRunState,
   runStateLabel,
   runStateVariant,
@@ -136,7 +137,7 @@ function PerformanceRow({ performance: p }: { performance: PerformanceListItem }
           <div className="flex flex-wrap gap-1">
             {p.genres.map((g) => (
               <Badge key={g} variant="secondary">
-                {g}
+                {formatGenre(g)}
               </Badge>
             ))}
           </div>
