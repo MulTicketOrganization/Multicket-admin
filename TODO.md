@@ -64,11 +64,45 @@
   설명·실제는 배열이다. 스키마 정정 요청 (프론트는 양쪽을 모두 받도록 방어해 둠)
 - [ ] `POST /admin/settlement/{id}/transfer-request` 의 PG 확정 일정 — 지금은 실제 이체 없이
   상태 확인만 한다. 실제 이체가 시작되면 버튼 문구·확인 절차를 바꿔야 함
-- [ ] `GET/POST /admin/keyword` 의 응답 스키마가 `{}` 로 비어 있어 계약 검증 불가
+- [ ] `GET/POST /admin/keyword` 의 응답 스키마가 `{}` 로 비어 있어 계약 검증 불가 —
+  공개 `GET /keyword` 는 `{ TYPE: string[] }` 평면 배열을, 관리자 API 설명은
+  `{ active, inactive }` 를 말한다. 프론트는 양쪽을 모두 받도록 정규화해 뒀지만 스키마 명시 요청.
 
 ### 1.8 백엔드 알려진 이슈
 - [ ] 회원가입 기본 MemberType 이 `CREATOR` 인 점 정책 확인
 - [ ] `PaymentController` 비활성 상태 — 결제 관련 Admin 화면 보류
+
+### 1.9 스키마 breaking change 반영 (2026-08-27)
+
+새 endpoint 는 없었고, 대신 기존 응답/요청 스키마가 여러 군데 깨지는 방향으로 바뀌어 전부 반영했다.
+
+- **실패 이벤트 → inbox 이벤트 파이프라인 교체.** `/admin/failed-event/**` 는 URL 만 남고
+  내용이 완전히 바뀌었다 (outbox → CDC → RabbitMQ → inbox_event).
+  - status: `PENDING/COMPLETE` → `RECEIVED/DONE/FAILED/IGNORED`
+  - eventType: 10종 → 13종 (`TICKET_NOTIFICATION_*` 4종이 `TICKET_NOTIFICATION` 하나로 통합,
+    `REPORT_PROCESSED_MAIL`·`MEMBER_REJECTED_MAIL`·`MAINTENANCE_REDIS_EVICT`·
+    `PLATFORM_PARTNER_*`·`INQUIRY_CREATED_SLACK`·`PERFORMANCE_DETAIL_CACHE_EVICT` 신설)
+  - 응답 필드: `target`·`originQueue`·`description` 삭제, `eventId`(outbox UUID) 신설
+  - retry 는 `FAILED` 상태 + 지정 7종만, complete 는 `FAILED → IGNORED` 만 허용
+  - 이제 실패 건만이 아니라 파이프라인 전체 이력이 보이므로 화면 이름을 **"이벤트 이력"** 으로 바꿨다
+- **GenreType 이 한글 문자열 → enum 코드**(`PLAY`/`MUSICAL`/`CHILDREN_FAMILY`/`EXPERIMENTAL`/
+  `SCHOOL`/`FESTIVAL`)로 바뀌었다. 목록 필터·공연 상세·회원 선호장르 모두 영향.
+- **region 필터가 한글 권역명 → enum 코드**(`CAPITAL`/`CHUNGCHEONG`/`YEONGNAM`/`HONAM`/
+  `GANGWON`/`JEJU`/`DAEHAKRO`/`ETC`). `area` 도 마찬가지로 코드가 내려온다 (기존 타입이
+  한글 라벨을 값으로 쓰고 있어 실제 응답과 어긋나 있었다).
+- **KeywordType 이 `GENRE`/`ELSE` → `GENRE`/`ISDAEHAKRO`/`OVERSEA`/`FREE`.**
+  네 타입 모두 화이트리스트가 생겨 자유 입력이 불가능해졌고, 편집 UI 를 허용값 토글로 바꿨다.
+- **`PATCH /admin/inquiry/{id}` 에 `responseContent` 필수 추가**, `MEMBER_STATUS + REJECT` 에는
+  `rejectReason` 도 필수. 상세 응답에 `responderId`·`responderNickName`·`responseContent`·
+  `responseDate` 가 생겨 "관리자 응답" 블록으로 노출한다.
+- **신고 사유(`reason`) 가 자유 문자열 → enum**(`COPYRIGHT_INFRINGEMENT`/
+  `FRAUD_OR_FALSE_INFORMATION`/`INAPPROPRIATE_CONTENT`/`SPAM`/`ETC`).
+
+- [ ] `AdminOrderRefundRequest` 의 `promotionDiscountRetainOption` ·
+  `cancelPaymentBodyRefundAccount` (가상계좌 환불 계좌) 는 "당분간 비워두라" 는 설명대로 미배선.
+  가상계좌 결제가 열리면 환불 폼에 계좌 입력을 추가해야 한다.
+- [ ] `TicketType` 이 스웨거상 `NORMAL` 하나만 남았다. `PREMIUM`/`KID`/`ADULT`/`SENIOR` 가
+  폐기된 것인지 확인 (프론트는 기존 라벨을 남겨 둠)
 
 ---
 
