@@ -63,10 +63,12 @@ test.describe("operations", () => {
     await expect(page.getByRole("button", { name: "재실행" })).toBeDisabled();
   });
 
-  test("키워드: 삭제 후 저장하면 남은 목록 전체를 전송한다", async ({ page }) => {
+  test("키워드: 끄고 저장하면 남은 목록 전체를 전송한다", async ({ page }) => {
     await mockKeywords(page, {
-      GENRE: { active: ["연극", "뮤지컬"], inactive: [] },
-      ELSE: { active: ["추천"], inactive: [] },
+      GENRE: { active: ["PLAY", "MUSICAL"], inactive: [] },
+      ISDAEHAKRO: { active: ["DAEHAKRO"], inactive: [] },
+      OVERSEA: { active: [], inactive: [] },
+      FREE: { active: ["무료"], inactive: [] },
     });
 
     let sent: { keywords: Record<string, string[]> } | null = null;
@@ -77,7 +79,7 @@ test.describe("operations", () => {
     await page.goto("/keywords");
     await expect(page.getByRole("heading", { name: "검색 키워드" })).toBeVisible();
 
-    await page.getByRole("button", { name: "뮤지컬 제거" }).click();
+    await page.getByRole("button", { name: /뮤지컬/ }).click();
     await page
       .locator("form, div")
       .filter({ hasText: "장르 키워드" })
@@ -86,7 +88,7 @@ test.describe("operations", () => {
       .click();
 
     await expect(page.getByText(/장르 키워드.*저장했습니다/)).toBeVisible();
-    expect(sent).toEqual({ keywords: { GENRE: ["연극"] } });
+    expect(sent).toEqual({ keywords: { GENRE: ["PLAY"] } });
   });
 
   test("공고: 목록에서 타입·노출 상태를 확인한다", async ({ page }) => {

@@ -25,9 +25,9 @@ test.describe("failed events", () => {
     });
 
     await page.goto("/failed-events");
-    await expect(page.getByRole("heading", { name: "실패 이벤트" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "이벤트 이력" })).toBeVisible();
 
-    await page.getByRole("link", { name: SAMPLE_FAILED_EVENT.target! }).click();
+    await page.getByRole("link", { name: SAMPLE_FAILED_EVENT.eventId! }).click();
     await expect(page).toHaveURL(/\/failed-events\/7$/);
     await expect(page.getByText("PG 응답 시간 초과")).toBeVisible();
     // payload 는 객체면 pretty-print 되어 그대로 보인다
@@ -41,7 +41,7 @@ test.describe("failed events", () => {
   test("재실행을 지원하지 않는 타입은 버튼이 잠긴다", async ({ page }) => {
     const notRetryable = {
       ...SAMPLE_FAILED_EVENT,
-      eventType: "TICKET_NOTIFICATION_ACCEPT",
+      eventType: "TICKET_NOTIFICATION",
     };
     await mockFailedEventList(page, [notRetryable]);
     await mockFailedEventDetail(page, notRetryable);
@@ -54,14 +54,14 @@ test.describe("failed events", () => {
     await expect(page.getByRole("button", { name: "확인 처리" })).toBeEnabled();
   });
 
-  test("확인 완료된 건은 조치 버튼이 사라진다", async ({ page }) => {
-    const done = { ...SAMPLE_FAILED_EVENT, status: "COMPLETE" as const };
+  test("FAILED 가 아닌 건은 조치 버튼이 사라진다", async ({ page }) => {
+    const done = { ...SAMPLE_FAILED_EVENT, status: "DONE" as const };
     await mockFailedEventList(page, [done]);
     await mockFailedEventDetail(page, done);
 
     await page.goto("/failed-events/7");
     await expect(
-      page.getByText("확인 완료된 건은 더 이상 조작할 수 없습니다."),
+      page.getByText("실패(FAILED) 상태의 이벤트만 재실행하거나 확인 처리할 수 있습니다."),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "재실행" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "확인 처리" })).toHaveCount(0);
@@ -72,13 +72,13 @@ test.describe("failed events", () => {
     await page.goto("/failed-events");
 
     await page.getByLabel("처리 상태 필터").click();
-    await page.getByRole("option", { name: "미확인" }).click();
-    await page.waitForURL(/status=PENDING/);
+    await page.getByRole("option", { name: "실패", exact: true }).click();
+    await page.waitForURL(/status=FAILED/);
 
     await page.getByLabel("이벤트 타입 필터").click();
     await page.getByRole("option", { name: "정산 이체" }).click();
     await page.waitForURL(/type=SETTLEMENT_TRANSFER/);
 
-    await expect(page.getByText("조건에 맞는 실패 이벤트가 없습니다.")).toBeVisible();
+    await expect(page.getByText("조건에 맞는 이벤트가 없습니다.")).toBeVisible();
   });
 });
