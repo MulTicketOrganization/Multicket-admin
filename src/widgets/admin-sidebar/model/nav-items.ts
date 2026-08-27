@@ -99,7 +99,7 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
     title: "시스템",
     items: [
       { href: "/batch", label: "배치 관리", icon: Server },
-      { href: "/failed-events", label: "실패 이벤트", icon: Siren },
+      { href: "/failed-events", label: "이벤트 이력", icon: Siren },
       { href: "/account", label: "내 계정", icon: UserCog },
     ],
   },

@@ -3,9 +3,10 @@
 import { AlertTriangle } from "lucide-react";
 
 import {
+  FailedEventStatus,
   failedEventStatusLabel,
   failedEventStatusVariant,
-  failedEventTypeLabel,
+  formatEventType,
   formatPayload,
   useFailedEventDetail,
 } from "@/entities/failed-event";
@@ -38,7 +39,7 @@ export function FailedEventDetailCard({ eventId }: { eventId: number }) {
         <CardContent className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
           <AlertTriangle className="size-6 text-destructive" />
           <p className="text-sm">
-            {error instanceof Error ? error.message : "실패 이벤트를 불러오지 못했습니다."}
+            {error instanceof Error ? error.message : "이벤트를 불러오지 못했습니다."}
           </p>
         </CardContent>
       </Card>
@@ -49,29 +50,30 @@ export function FailedEventDetailCard({ eventId }: { eventId: number }) {
     <Card>
       <CardContent className="space-y-5 py-6">
         <header className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{failedEventTypeLabel[data.eventType]}</Badge>
+          <Badge variant="secondary">{formatEventType(data.eventType)}</Badge>
           <Badge variant={failedEventStatusVariant[data.status]}>
             {failedEventStatusLabel[data.status]}
           </Badge>
         </header>
 
         <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-          <Field label="이벤트 ID" value={String(data.id)} mono />
-          <Field label="대상" value={data.target || "-"} mono />
-          <Field label="원본 큐" value={data.originQueue || "-"} mono />
+          <Field label="Inbox ID" value={String(data.id)} mono />
+          <Field label="이벤트 ID" value={data.eventId || "-"} mono />
           <Field label="발생 시각" value={formatDateTime(data.occurredAt)} />
           <Field label="DB 저장" value={formatDateTime(data.createDate)} />
-          <Field label="설명" value={data.description || "-"} />
         </dl>
 
         <Separator />
 
-        <section className="space-y-2">
-          <h3 className="text-sm font-semibold">실패 사유</h3>
-          <p className="whitespace-pre-wrap rounded-md border bg-muted/30 p-4 text-sm leading-relaxed">
-            {data.failureReason || "기록된 사유가 없습니다."}
-          </p>
-        </section>
+        {/* 실패 사유는 FAILED 일 때만 채워진다 */}
+        {data.status === FailedEventStatus.FAILED && (
+          <section className="space-y-2">
+            <h3 className="text-sm font-semibold">실패 사유</h3>
+            <p className="whitespace-pre-wrap rounded-md border bg-muted/30 p-4 text-sm leading-relaxed">
+              {data.failureReason || "기록된 사유가 없습니다."}
+            </p>
+          </section>
+        )}
 
         <section className="space-y-2">
           <h3 className="text-sm font-semibold">원본 payload</h3>

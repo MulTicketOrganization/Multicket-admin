@@ -8,7 +8,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { FailedEventDetailCard } from "@/widgets/failed-event-detail-card";
 
 export const metadata: Metadata = {
-  title: "실패 이벤트 상세",
+  title: "이벤트 이력 상세",
 };
 
 export default async function FailedEventDetailPage({
@@ -23,7 +23,7 @@ export default async function FailedEventDetailPage({
   return (
     <>
       <PageHeader
-        title="실패 이벤트 상세"
+        title="이벤트 이력 상세"
         description={`이벤트 #${eventId}`}
         actions={
           <Button asChild variant="outline" size="sm">
