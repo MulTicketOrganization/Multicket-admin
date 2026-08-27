@@ -14,6 +14,16 @@ export const ReportStatus = {
 } as const;
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
 
+/** 신고 사유 — 예전에는 자유 문자열이었으나 enum 으로 굳어졌다 */
+export const ReportReason = {
+  COPYRIGHT_INFRINGEMENT: "COPYRIGHT_INFRINGEMENT",
+  FRAUD_OR_FALSE_INFORMATION: "FRAUD_OR_FALSE_INFORMATION",
+  INAPPROPRIATE_CONTENT: "INAPPROPRIATE_CONTENT",
+  SPAM: "SPAM",
+  ETC: "ETC",
+} as const;
+export type ReportReason = (typeof ReportReason)[keyof typeof ReportReason];
+
 /** 신고에 적용할 처리 이벤트 */
 export const ReportEvent = {
   COMPLETE: "COMPLETE",
@@ -37,7 +47,7 @@ export interface ReportDetail {
   reporterId: number;
   reporterNickName: string;
   reporterEmail: string;
-  reason: string;
+  reason: ReportReason;
   status: ReportStatus;
   performanceId: number;
   performanceTitle: string;
