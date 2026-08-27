@@ -5,27 +5,30 @@
 
 import type { MemberStatus, MemberType } from "@/entities/member";
 
-/** 공연 상세 응답의 `area` — 시/도 단위 */
+/**
+ * 공연 상세 응답의 `area` — 시/도 단위 코드.
+ * 백엔드가 enum 코드를 그대로 내려주므로 한글 표기는 labels 의 `areaLabel` 로 변환한다.
+ */
 export const Area = {
-  SEOUL: "서울특별시",
-  INCHEON: "인천광역시",
-  DAEJEON: "대전광역시",
-  DAEGU: "대구광역시",
-  GWANGJU: "광주광역시",
-  BUSAN: "부산광역시",
-  ULSAN: "울산광역시",
-  SEJONG: "세종특별자치시",
-  GYEONGGI: "경기도",
-  CHUNGBUK: "충청북도",
-  CHUNGNAM: "충청남도",
-  GYEONGBUK: "경상북도",
-  GYEONGNAM: "경상남도",
-  JEONBUK: "전북특별자치도",
-  JEONNAM: "전라남도",
-  GANGWON: "강원특별자치도",
-  JEJU: "제주특별자치도",
-  DAEHAKRO: "대학로",
-  ETC: "기타",
+  SEOUL: "SEOUL",
+  INCHEON: "INCHEON",
+  DAEJEON: "DAEJEON",
+  DAEGU: "DAEGU",
+  GWANGJU: "GWANGJU",
+  BUSAN: "BUSAN",
+  ULSAN: "ULSAN",
+  SEJONG: "SEJONG",
+  GYEONGGI: "GYEONGGI",
+  CHUNGBUK: "CHUNGBUK",
+  CHUNGNAM: "CHUNGNAM",
+  GYEONGBUK: "GYEONGBUK",
+  GYEONGNAM: "GYEONGNAM",
+  JEONBUK: "JEONBUK",
+  JEONNAM: "JEONNAM",
+  GANGWON: "GANGWON",
+  JEJU: "JEJU",
+  DAEHAKRO: "DAEHAKRO",
+  ETC: "ETC",
 } as const;
 export type Area = (typeof Area)[keyof typeof Area];
 
@@ -33,34 +36,28 @@ export type Area = (typeof Area)[keyof typeof Area];
  * 목록 조회 필터의 `region` — 시/도가 아니라 통합 "권역" 단위.
  * 상세 응답의 Area 와 값 체계가 다르므로 절대 섞어 쓰지 말 것.
  */
-export const REGIONS = [
-  "수도권",
-  "충청권",
-  "영남권",
-  "호남권",
-  "강원",
-  "제주",
-  "대학로",
-  "기타",
-] as const;
-export type Region = (typeof REGIONS)[number];
+export const Region = {
+  CAPITAL: "CAPITAL",
+  CHUNGCHEONG: "CHUNGCHEONG",
+  YEONGNAM: "YEONGNAM",
+  HONAM: "HONAM",
+  GANGWON: "GANGWON",
+  JEJU: "JEJU",
+  DAEHAKRO: "DAEHAKRO",
+  ETC: "ETC",
+} as const;
+export type Region = (typeof Region)[keyof typeof Region];
 
-/** Genre 는 백엔드가 한글 문자열을 그대로 사용 */
-export const GENRES = [
-  "연극",
-  "뮤지컬",
-  "서양음악(클래식)",
-  "한국음악(국악)",
-  "대중음악",
-  "무용(서양/한국무용)",
-  "대중무용",
-  "서커스/마술",
-  "복합",
-  "아동",
-  "오픈런",
-  "기타",
-] as const;
-export type Genre = (typeof GENRES)[number];
+/** GenreType — 예전에는 한글 문자열이었으나 enum 코드로 바뀌었다 */
+export const Genre = {
+  PLAY: "PLAY",
+  MUSICAL: "MUSICAL",
+  CHILDREN_FAMILY: "CHILDREN_FAMILY",
+  EXPERIMENTAL: "EXPERIMENTAL",
+  SCHOOL: "SCHOOL",
+  FESTIVAL: "FESTIVAL",
+} as const;
+export type Genre = (typeof Genre)[keyof typeof Genre];
 
 export const CastStaff = {
   CAST: "CAST",
@@ -101,7 +98,7 @@ export interface PerformanceListItem {
   startDate: string;
   endDate: string;
   /** 장르는 배열 (단수 `genre` 아님) */
-  genres: string[] | null;
+  genres: Genre[] | null;
   deleted: boolean;
   memberId: number | null;
   memberNickname: string | null;
@@ -148,11 +145,11 @@ export interface PerformanceDetail {
   posterUrl: string | null;
   synopsis: string | null;
   area: Area | null;
-  genres: string[] | null;
+  genres: Genre[] | null;
   isOpenRun: boolean | null;
   isDaeHakRo: boolean | null;
   ticketLink: string | null;
-  /** 예매 마감 시간 (시간 단위) */
+  /** 예매 마감 시간 (분 단위) — 공연 시작 N분 전까지만 예매 가능. null 이면 제한 없음 */
   limitTime: number | null;
   deleted: boolean;
   syncedAt: string | null;
