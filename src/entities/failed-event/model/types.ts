@@ -34,6 +34,7 @@ export const FailedEventType = {
   R2_OBJECT_UPLOAD: "R2_OBJECT_UPLOAD",
   SETTLEMENT_TRANSFER: "SETTLEMENT_TRANSFER",
   PERFORMANCE_DETAIL_CACHE_EVICT: "PERFORMANCE_DETAIL_CACHE_EVICT",
+  CONSENT_DOCUMENT_CACHE_EVICT: "CONSENT_DOCUMENT_CACHE_EVICT",
 } as const;
 export type FailedEventType =
   (typeof FailedEventType)[keyof typeof FailedEventType];

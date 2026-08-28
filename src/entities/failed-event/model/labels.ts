@@ -28,6 +28,7 @@ export const failedEventTypeLabel: Record<FailedEventType, string> = {
   [FailedEventType.R2_OBJECT_UPLOAD]: "이미지 업로드",
   [FailedEventType.SETTLEMENT_TRANSFER]: "정산 이체",
   [FailedEventType.PERFORMANCE_DETAIL_CACHE_EVICT]: "공연 상세 캐시 무효화",
+  [FailedEventType.CONSENT_DOCUMENT_CACHE_EVICT]: "약관 본문 캐시 무효화",
 };
 
 /** 백엔드가 타입을 추가해도 화면이 깨지지 않도록 미지의 값은 코드를 그대로 보여준다 */
