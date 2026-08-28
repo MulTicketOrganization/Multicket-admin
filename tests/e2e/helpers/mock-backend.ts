@@ -798,3 +798,139 @@ export async function mockFailedEventAction(
     },
   );
 }
+
+/* ============================== Banner ============================== */
+
+export interface MockBanner {
+  id: number;
+  imageUrl: string;
+  linkUrl: string | null;
+  exposureStartDate: string;
+  exposureEndDate: string;
+}
+
+/** 노출 기간이 넉넉히 열려 있어 "노출중" 으로 계산되는 배너 */
+export const SAMPLE_BANNER: MockBanner = {
+  id: 1,
+  imageUrl: "https://cdn.multicket.com/banners/summer.png",
+  linkUrl: "https://multicket.com/events/summer",
+  exposureStartDate: "2020-01-01T00:00:00",
+  exposureEndDate: "2099-12-31T23:59:00",
+};
+
+/** GET /admin/banner — 커서 없이 전체 목록 */
+export async function mockBannerList(page: Page, banners: MockBanner[] = [SAMPLE_BANNER]) {
+  await page.route("**/api/backend/admin/banner", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: { data: banners } }));
+  });
+}
+
+/** POST /admin/banner */
+export async function mockBannerCreate(
+  page: Page,
+  onCall?: (body: Record<string, unknown>) => void,
+) {
+  await page.route("**/api/backend/admin/banner", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    if (onCall) onCall(route.request().postDataJSON() as Record<string, unknown>);
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
+  });
+}
+
+/** PATCH · DELETE /admin/banner/{id} */
+export async function mockBannerMutation(
+  page: Page,
+  bannerId: number,
+  method: "PATCH" | "DELETE",
+  onCall?: (body: Record<string, unknown> | null) => void,
+) {
+  await page.route(`**/api/backend/admin/banner/${bannerId}`, async (route) => {
+    if (route.request().method() !== method) {
+      await route.fallback();
+      return;
+    }
+    if (onCall) {
+      onCall(
+        method === "PATCH"
+          ? (route.request().postDataJSON() as Record<string, unknown>)
+          : null,
+      );
+    }
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
+  });
+}
+
+/* ============================== Consent document ============================== */
+
+export interface MockConsentDocument {
+  id: number;
+  type: "SERVICE_TERMS" | "PRIVACY_POLICY" | "AGE_OVER_14" | "MARKETING";
+  content: string;
+  version: number;
+  deleted: boolean;
+}
+
+export const SAMPLE_CONSENT_DOCUMENT: MockConsentDocument = {
+  id: 3,
+  type: "SERVICE_TERMS",
+  content: "제1조(목적) 본 약관은 멀티켓 서비스 이용에 관한 사항을 규정합니다.",
+  version: 1.1,
+  deleted: false,
+};
+
+/** GET /consent-document — 앱이 받아가는 타입별 현재 버전 */
+export async function mockCurrentConsentDocuments(
+  page: Page,
+  documents: MockConsentDocument[] = [SAMPLE_CONSENT_DOCUMENT],
+) {
+  await page.route("**/api/backend/consent-document", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: { data: documents } })),
+  );
+}
+
+/** GET /admin/consent-document — 폐기본 포함 전체 이력 (cursor) */
+export async function mockConsentDocumentList(
+  page: Page,
+  documents: MockConsentDocument[] = [SAMPLE_CONSENT_DOCUMENT],
+  { hasNext = false }: { hasNext?: boolean } = {},
+) {
+  await page.route("**/api/backend/admin/consent-document?**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: { data: documents, hasNext } }));
+  });
+}
+
+/** GET /admin/consent-document/{id} — 전문 조회 */
+export async function mockConsentDocumentDetail(
+  page: Page,
+  document: MockConsentDocument = SAMPLE_CONSENT_DOCUMENT,
+) {
+  await page.route(`**/api/backend/admin/consent-document/${document.id}`, (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: document })),
+  );
+}
+
+/** POST /admin/consent-document — 새 버전 발행 */
+export async function mockConsentDocumentCreate(
+  page: Page,
+  onCall?: (body: Record<string, unknown>) => void,
+) {
+  await page.route("**/api/backend/admin/consent-document", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    if (onCall) onCall(route.request().postDataJSON() as Record<string, unknown>);
+    await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
+  });
+}

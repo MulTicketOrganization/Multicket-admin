@@ -104,6 +104,46 @@
 - [ ] `TicketType` 이 스웨거상 `NORMAL` 하나만 남았다. `PREMIUM`/`KID`/`ADULT`/`SENIOR` 가
   폐기된 것인지 확인 (프론트는 기존 라벨을 남겨 둠)
 
+### 1.10 홈 배너 · 약관 본문 API 신설 (2026-08-28)
+
+두 도메인이 새로 생겨 화면을 붙였다.
+
+**홈 배너 (`/banners`)** — `GET/POST /admin/banner`, `GET/PATCH/DELETE /admin/banner/{id}`
+- 앱은 `GET /banner` 로 현재 시각이 노출 기간에 걸린 것만 가져가 홈 하단 캐러셀로 돌린다.
+- 관리자 목록은 커서 없이 전체를 한 번에 준다.
+- `PATCH` 가 전량 교체라 수정 폼도 등록과 같은 필수 항목을 전부 다시 보낸다.
+- [ ] **`displayOrder` 를 프론트에서 다룰 수 없다.** 스웨거 설명은 "목록은 displayOrder
+  오름차순", "등록 시 displayOrder 필수" 라고 하는데 `BannerResponse`·`BannerCreateRequest`·
+  `BannerUpdateRequest` 어디에도 그 필드가 없다. 설명이 낡은 것인지 DTO 가 빠진 것인지
+  확인 필요 — 지금은 운영자가 배너 노출 순서를 정할 방법이 없다.
+- [ ] `DELETE /admin/banner/{id}` 가 하드 삭제다. 노출만 끊는 용도로는 종료 일시를 과거로
+  수정하도록 화면에서 안내하고 있으나, soft delete 지원 여부 확인 요청.
+- [ ] 이미지 업로드 경로가 없다. 지금은 CDN URL 을 손으로 붙여 넣는데,
+  `POST /s3/presignurl` 를 배너에도 쓸 수 있는지 확인 → 가능하면 업로더를 붙인다.
+
+**약관 본문 (`/consent-documents`)** — `GET/POST /admin/consent-document`,
+`GET /admin/consent-document/{id}`
+- 등록과 수정을 구분하지 않는 단일 API 다. 저장하면 같은 타입의 현재 버전이 폐기되고
+  새 버전(직전 + 0.1, 최초 1.0)으로 교체된다.
+- **그 타입에 동의했던 회원 전원의 `agreed` 가 false 로 초기화된다.** 되돌릴 수 없어
+  발행 버튼에 확인 다이얼로그를 한 단계 뒀다.
+- 타입별 현재 버전은 공개 `GET /consent-document` 에서 읽는다 — 관리자 이력은 커서
+  페이지네이션이라 아직 안 불러온 페이지에 최신 버전이 있을 수 있다.
+- 폐기본도 `GET /admin/consent-document/{id}` 로 조회 가능해 "전문 보기" 에 연결했다.
+- [ ] 잘못 발행한 버전을 되돌릴 방법이 없다 (삭제도, 이전 버전 복구도 불가).
+  실수로 전 회원 동의를 날렸을 때의 복구 경로 확인 요청.
+- [ ] 약관 본문에 제목·시행일자 필드가 없다. 앱에서 "시행일 2026-09-01" 같은 표기가
+  필요하면 추가 요청 필요.
+
+**그 외**
+- inbox 이벤트 타입에 `CONSENT_DOCUMENT_CACHE_EVICT` 가 추가돼 라벨을 붙였다 (재실행 미지원).
+- `GET /banner`·`GET /consent-document` 는 설명상 "로그인 여부와 무관" 인데 실제로는
+  토큰 없이 호출하면 401 이 난다. Admin 은 프록시가 토큰을 붙여 문제없지만 앱 온보딩
+  (가입 전 화면)에서는 막힐 수 있다 — [ ] 백엔드에 공지 필요.
+- [ ] `PATCH /api/member/email`(이메일 변경) · `GET/POST /api/member/consent`(동의 이력) 는
+  사용자용 API 라 미배선. 회원 상세에서 동의 이력을 보여줄 필요가 있는지 검토
+  (현재 `/admin/member/detail` 에는 동의 정보가 없다).
+
 ---
 
 ## 2. 로컬 개발 환경 주의 사항

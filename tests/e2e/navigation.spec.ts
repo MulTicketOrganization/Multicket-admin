@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 
 import {
   SAMPLE_REPORT,
+  mockBannerList,
+  mockConsentDocumentList,
+  mockCurrentConsentDocuments,
   mockDashboardSummary,
   mockInquiryList,
   mockJobInstances,
@@ -82,6 +85,24 @@ test.describe("navigation", () => {
 
     await expect(page).toHaveURL(/\/reports$/);
     await expect(page.getByRole("heading", { name: "신고 관리" })).toBeVisible();
+  });
+
+  test("콘텐츠 그룹에서 홈 배너 · 약관 관리로 이동할 수 있다", async ({ page }) => {
+    await mockMemberList(page, []);
+    await mockBannerList(page, []);
+    await mockConsentDocumentList(page, []);
+    await mockCurrentConsentDocuments(page, []);
+
+    await page.goto("/members?type=AUDIENCE");
+    const sidebar = page.getByRole("complementary");
+
+    await sidebar.getByRole("link", { name: "홈 배너" }).click();
+    await expect(page).toHaveURL(/\/banners$/);
+    await expect(page.getByRole("heading", { name: "홈 배너 관리" })).toBeVisible();
+
+    await sidebar.getByRole("link", { name: "약관 관리" }).click();
+    await expect(page).toHaveURL(/\/consent-documents$/);
+    await expect(page.getByRole("heading", { name: "약관 관리" })).toBeVisible();
   });
 
   test("대시보드에 집계 지표와 목록 기반 지표가 함께 뜬다", async ({ page }) => {
