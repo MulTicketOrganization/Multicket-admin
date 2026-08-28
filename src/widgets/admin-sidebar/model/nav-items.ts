@@ -1,10 +1,12 @@
 import {
   Coins,
   FileText,
+  Images,
   Inbox,
   LayoutDashboard,
   Server,
   ShieldAlert,
+  ScrollText,
   Smartphone,
   Siren,
   Tags,
@@ -91,6 +93,8 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
     title: "콘텐츠",
     items: [
       { href: "/notices", label: "공고 관리", icon: FileText },
+      { href: "/banners", label: "홈 배너", icon: Images },
+      { href: "/consent-documents", label: "약관 관리", icon: ScrollText },
       { href: "/keywords", label: "검색 키워드", icon: Tags },
       { href: "/app-versions", label: "앱 버전", icon: Smartphone },
     ],
