@@ -11,7 +11,14 @@
  * - `APP_UPDATE` 에 `updatePolicy`(RECOMMENDED/FORCED) 필수
  * - `APP_UPDATE`/`URGENT`/`MAINTENANCE` 에 `targetPlatforms` 필수
  * - `GET /notice/urgent` 가 단건이 아니라 **배열**을 돌려줌
+ *
+ * 2026-08-29 변경:
+ * - `memberType`(공지 대상자) 필수 추가 — AUDIENCE 면 전원이 대상
+ * - `appVersionId`(연결할 앱 버전) 필수 추가, 응답에는 `appVersion` 객체로 실려 온다
  */
+
+import type { AppVersion } from "@/entities/app-version";
+import type { MemberType } from "@/entities/member";
 
 export const NoticeType = {
   CANCEL_REFUND_FREE: "CANCEL_REFUND_FREE",
@@ -78,6 +85,10 @@ export interface NoticeListItem {
   writerEmail: string | null;
   createDate: string;
   expireDate: string | null;
+  /** 공지 대상자 — AUDIENCE 면 전원이 대상 */
+  memberType: MemberType;
+  /** 연결된 앱 버전 (앱의 최소 요구사항) */
+  appVersion: AppVersion | null;
 }
 
 /** GET /admin/notice/{id} 응답 */
@@ -96,6 +107,8 @@ export interface NoticeDetail {
   writerEmail: string | null;
   createDate: string;
   updateDate: string | null;
+  memberType: MemberType;
+  appVersion: AppVersion | null;
 }
 
 /** 공용 `GET /notice` · `GET /notice/urgent` 응답 (사용자에게 실제로 나가는 형태) */
@@ -109,6 +122,8 @@ export interface PublicNotice {
   maintenanceStartDate: string | null;
   updatePolicy: UpdatePolicy | null;
   targetPlatforms: NoticePlatform[] | null;
+  memberType: MemberType;
+  appVersion: AppVersion | null;
 }
 
 /** POST /admin/notice · PATCH /admin/notice/{id} body (동일 스키마) */
@@ -124,6 +139,10 @@ export interface NoticeWriteRequest {
   targetPlatforms?: NoticePlatform[];
   /** MAINTENANCE 만 */
   maintenanceStartDate?: string;
+  /** 공지 대상자 — 필수. AUDIENCE 면 전원이 대상 */
+  memberType: MemberType;
+  /** 연결할 앱 버전 ID — 필수. GET /admin/app-version 이력 중에서 고른다 */
+  appVersionId: number;
 }
 
 /** GET /admin/notice 쿼리 파라미터 */
@@ -157,6 +176,7 @@ export function validateNoticeDraft(draft: {
   updatePolicy?: UpdatePolicy;
   targetPlatforms?: NoticePlatform[];
   maintenanceStartDate?: string;
+  appVersionId?: number | null;
 }): string | null {
   if (!draft.title.trim()) return "제목을 입력하세요.";
   if (!draft.content.trim()) return "내용을 입력하세요.";
@@ -177,5 +197,6 @@ export function validateNoticeDraft(draft: {
   ) {
     return "점검 종료(만료) 시각은 시작 일시보다 뒤여야 합니다.";
   }
+  if (!draft.appVersionId) return "연결할 앱 버전을 골라야 합니다.";
   return null;
 }
