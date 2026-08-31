@@ -101,7 +101,7 @@ export function SettlementDetailCard({ settlementId }: { settlementId: number })
             <AmountRow label="총 성공 결제금액" value={data.totalSuccessAmount} />
             <AmountRow label="총 취소금액" value={-data.totalCancelAmount} />
             <AmountRow
-              label={`플랫폼 수수료 (${data.feeRatePercent}%)`}
+              label={`수수료 (플랫폼 ${data.feeRatePercent}% + PG ${data.pgFeeRatePercent}%)`}
               value={-data.feeAmount}
             />
             <Separator />
@@ -117,9 +117,9 @@ export function SettlementDetailCard({ settlementId }: { settlementId: number })
           )}
 
           <p className="text-xs text-muted-foreground">
-            PortOne 수기 이체 ID:{" "}
+            PG 지급요청 참조 ID:{" "}
             <span className="font-mono">
-              {data.portoneTransferId ?? "아직 이체 전 (null)"}
+              {data.transferId ?? "아직 이체 전 (null)"}
             </span>
           </p>
         </CardContent>
