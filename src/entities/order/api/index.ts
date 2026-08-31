@@ -1,5 +1,12 @@
 import { apiFetch, type PagedResponse } from "@/shared/api";
-import type { OrderDetail, OrderListItem, OrderListQuery, OrderRefundRequest } from "../model/types";
+import type {
+  OrderDetail,
+  OrderListItem,
+  OrderListQuery,
+  OrderRefundRequest,
+  OrderRefundResult,
+  RefundPolicy,
+} from "../model/types";
 
 /** GET /admin/order/list — 회원 단위 cursor 페이지네이션 */
 export async function getMemberOrders(
@@ -35,6 +42,20 @@ export async function cancelOrder(orderId: number): Promise<void> {
 export async function refundOrder(
   orderId: number,
   body: OrderRefundRequest,
-): Promise<void> {
-  await apiFetch<void>(`/admin/order/${orderId}/refund`, { method: "PATCH", body });
+): Promise<OrderRefundResult> {
+  return apiFetch<OrderRefundResult>(`/admin/order/${orderId}/refund`, {
+    method: "PATCH",
+    body,
+  });
+}
+
+/**
+ * GET /notice/refund-policy — 관람일까지 남은 일수별 환불 비율표.
+ *
+ * 실제 환불액 계산 코드와 같은 상수를 노출하는 공개 endpoint 다.
+ * 관리자용 환불 예상액 조회 API 가 없어(`/order/ticket/{id}/cancel-amount` 는
+ * 본인 주문 전용) 운영자가 이 표를 보고 금액을 계산한다.
+ */
+export async function getRefundPolicy(): Promise<RefundPolicy> {
+  return apiFetch<RefundPolicy>("/notice/refund-policy", { method: "GET" });
 }

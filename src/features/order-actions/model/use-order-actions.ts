@@ -18,6 +18,7 @@ export function useCancelOrder() {
   });
 }
 
+/** 성공 응답에 실제 환불액·취소 수수료·환불 예상 기간이 실려 온다 */
 export function useRefundOrder() {
   const queryClient = useQueryClient();
   return useMutation({
