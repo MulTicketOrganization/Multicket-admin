@@ -118,7 +118,8 @@ test.describe("operations", () => {
     await expect(body.getByText("만료", { exact: true })).toBeVisible();
   });
 
-  test("공고: 제목·내용·만료 시각이 모두 있어야 등록된다", async ({ page }) => {
+  test("공고: 제목·내용·만료 시각·앱 버전이 모두 있어야 등록된다", async ({ page }) => {
+    await mockAppVersions(page);
     let created: Record<string, unknown> | null = null;
     await mockNoticeCreate(page, (body) => {
       created = body;
@@ -134,6 +135,11 @@ test.describe("operations", () => {
     await expect(submit).toBeDisabled();
 
     await page.getByLabel("만료 시각").fill("2026-09-01T03:00");
+    // appVersionId 가 모든 타입에 필수라 아직 잠겨 있다
+    await expect(submit).toBeDisabled();
+
+    await page.getByLabel("연결할 앱 버전").click();
+    await page.getByRole("option", { name: "iOS 1.2.0" }).click();
     await expect(submit).toBeEnabled();
     await submit.click();
 
@@ -144,10 +150,13 @@ test.describe("operations", () => {
       title: "유료 공연 환불 규정",
       content: "새 환불 규정 본문",
       expireDate: "2026-09-01T03:00:00",
+      memberType: "AUDIENCE",
+      appVersionId: 1,
     });
   });
 
   test("공고: 앱 업데이트는 강제 여부와 대상 플랫폼을 요구한다", async ({ page }) => {
+    await mockAppVersions(page);
     let created: Record<string, unknown> | null = null;
     await mockNoticeCreate(page, (body) => {
       created = body;
@@ -160,6 +169,8 @@ test.describe("operations", () => {
     await page.getByLabel("제목").fill("업데이트 안내");
     await page.getByLabel("내용").fill("최신 버전으로 업데이트해 주세요.");
     await page.getByLabel("만료 시각").fill("2026-09-01T03:00");
+    await page.getByLabel("연결할 앱 버전").click();
+    await page.getByRole("option", { name: "iOS 1.2.0" }).click();
 
     const submit = page.getByRole("button", { name: "공고 등록" });
     // 강제 여부를 고르기 전까지는 잠겨 있다
@@ -182,6 +193,8 @@ test.describe("operations", () => {
       expireDate: "2026-09-01T03:00:00",
       updatePolicy: "FORCED",
       targetPlatforms: ["IOS"],
+      memberType: "AUDIENCE",
+      appVersionId: 1,
     });
   });
 
@@ -278,7 +291,7 @@ test.describe("operations", () => {
     await page.getByRole("link", { name: SAMPLE_SETTLEMENT.performanceTitle }).click();
     await expect(page).toHaveURL(new RegExp(`/settlements/${SAMPLE_SETTLEMENT.id}$`));
 
-    await expect(page.getByText("플랫폼 수수료 (10%)")).toBeVisible();
+    await expect(page.getByText("수수료 (플랫폼 7% + PG 3%)")).toBeVisible();
     await expect(page.getByText("최종 정산금액")).toBeVisible();
     await expect(page.getByText("아직 이체 전 (null)")).toBeVisible();
   });
@@ -287,7 +300,7 @@ test.describe("operations", () => {
     await mockSettlementDetail(page, {
       status: "SUCCESS",
       successAt: "2026-06-30T10:00:00",
-      portoneTransferId: "tr_123",
+      transferId: "tr_123",
     });
 
     await page.goto(`/settlements/${SAMPLE_SETTLEMENT.id}`);
