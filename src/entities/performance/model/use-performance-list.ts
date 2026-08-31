@@ -3,7 +3,8 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { getPerformances } from "../api/get-performances";
-import type { Genre, PerformanceListItem, Region } from "./types";
+import type { Region } from "@/entities/region";
+import type { Genre, PerformanceListItem } from "./types";
 
 export interface PerformanceListFilters {
   title?: string;

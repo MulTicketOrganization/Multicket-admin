@@ -4,49 +4,7 @@
  */
 
 import type { MemberStatus, MemberType } from "@/entities/member";
-
-/**
- * 공연 상세 응답의 `area` — 시/도 단위 코드.
- * 백엔드가 enum 코드를 그대로 내려주므로 한글 표기는 labels 의 `areaLabel` 로 변환한다.
- */
-export const Area = {
-  SEOUL: "SEOUL",
-  INCHEON: "INCHEON",
-  DAEJEON: "DAEJEON",
-  DAEGU: "DAEGU",
-  GWANGJU: "GWANGJU",
-  BUSAN: "BUSAN",
-  ULSAN: "ULSAN",
-  SEJONG: "SEJONG",
-  GYEONGGI: "GYEONGGI",
-  CHUNGBUK: "CHUNGBUK",
-  CHUNGNAM: "CHUNGNAM",
-  GYEONGBUK: "GYEONGBUK",
-  GYEONGNAM: "GYEONGNAM",
-  JEONBUK: "JEONBUK",
-  JEONNAM: "JEONNAM",
-  GANGWON: "GANGWON",
-  JEJU: "JEJU",
-  DAEHAKRO: "DAEHAKRO",
-  ETC: "ETC",
-} as const;
-export type Area = (typeof Area)[keyof typeof Area];
-
-/**
- * 목록 조회 필터의 `region` — 시/도가 아니라 통합 "권역" 단위.
- * 상세 응답의 Area 와 값 체계가 다르므로 절대 섞어 쓰지 말 것.
- */
-export const Region = {
-  CAPITAL: "CAPITAL",
-  CHUNGCHEONG: "CHUNGCHEONG",
-  YEONGNAM: "YEONGNAM",
-  HONAM: "HONAM",
-  GANGWON: "GANGWON",
-  JEJU: "JEJU",
-  DAEHAKRO: "DAEHAKRO",
-  ETC: "ETC",
-} as const;
-export type Region = (typeof Region)[keyof typeof Region];
+import type { Area, Region } from "@/entities/region";
 
 /** GenreType — 예전에는 한글 문자열이었으나 enum 코드로 바뀌었다 */
 export const Genre = {
@@ -125,6 +83,8 @@ export interface TicketInfo {
 
 export interface Discount {
   id: number;
+  /** 할인명 (최대 50바이트) */
+  discountName: string | null;
   discountType: DiscountType;
   /** 백엔드가 문자열로 내려준다 (PERCENT 면 "10", FIXED 면 "3000") */
   discountValue: string;

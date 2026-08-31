@@ -7,7 +7,6 @@ import {
   CastStaff,
   castStaffLabel,
   discountTypeLabel,
-  formatArea,
   formatDiscountValue,
   formatGenre,
   ticketTypeLabel,
@@ -17,6 +16,7 @@ import {
   type TicketDate,
   type TicketInfo,
 } from "@/entities/performance";
+import { formatArea } from "@/entities/region";
 import {
   memberStatusLabel,
   memberStatusVariant,
@@ -324,8 +324,10 @@ function TicketCard({ performance: p }: { performance: PerformanceDetail }) {
                   key={d.id}
                   className="flex items-center justify-between rounded-md border bg-card px-3 py-2"
                 >
-                  <span className="font-medium">{discountTypeLabel[d.discountType]}</span>
-                  <span className="text-muted-foreground">
+                  <span className="min-w-0 truncate font-medium">
+                    {d.discountName?.trim() || discountTypeLabel[d.discountType]}
+                  </span>
+                  <span className="shrink-0 text-muted-foreground">
                     {formatDiscountValue(d.discountType, d.discountValue)}
                   </span>
                 </li>
