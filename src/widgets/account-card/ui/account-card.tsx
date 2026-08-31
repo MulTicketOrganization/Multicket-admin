@@ -11,6 +11,8 @@ import {
   memberTypeLabel,
   memberTypeVariant,
 } from "@/entities/member";
+import { formatGenre } from "@/entities/performance";
+import { formatRegion } from "@/entities/region";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent } from "@/shared/ui/card";
@@ -94,11 +96,20 @@ export function AccountCard() {
           <Field label="로그인 방식" value={loginTypeLabel[data.loginType]} />
           <Field label="성별" value={data.gender ? genderLabel[data.gender] : "-"} />
           <Field label="생년월일" value={formatBirthday(data.year, data.month, data.day)} />
-          <Field label="선호 지역" value={data.area ?? "-"} />
+          <Field label="선호 지역" value={data.region ? formatRegion(data.region) : "-"} />
           <Field
             label="선호 장르"
-            value={data.genres && data.genres.length > 0 ? data.genres.join(", ") : "-"}
+            value={
+              data.genres && data.genres.length > 0
+                ? data.genres.map(formatGenre).join(", ")
+                : "-"
+            }
             full
+          />
+          <Field label="본인인증" value={data.authCheck ? "완료" : "미완료"} />
+          <Field
+            label="계좌·파트너 인증"
+            value={data.businessAuthCompleted ? "완료" : "미완료"}
           />
           <Field label="가입일" value={formatDate(data.createDate)} />
           <Field label="마지막 로그인" value={formatDateTime(data.lastLoginAt)} />

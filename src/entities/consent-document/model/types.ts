@@ -71,6 +71,23 @@ export function formatConsentVersion(version: number | null | undefined): string
   return `v${version.toFixed(1)}`;
 }
 
+/**
+ * 회원의 약관 동의 상태 (`GET /api/member/consent`, `GET /api/member/me` 의 `consents`).
+ * 타입당 최대 1건이며, 관리자가 문서를 교체하면 `documentId` 가 최신 문서로 갱신되고
+ * `agreed` 가 false 로 초기화된다.
+ */
+export interface ConsentHistoryItem {
+  type: ConsentType;
+  agreed: boolean;
+  documentId: number | null;
+  documentVersion: number | null;
+  /**
+   * 마지막으로 실제 동의한 시각.
+   * 한 번도 동의한 적 없으면 null — agreed 가 false 여도 과거 이력이 있으면 값이 있다.
+   */
+  agreedAt: string | null;
+}
+
 export const CONSENT_CONTENT_MIN_LENGTH = 10;
 
 export function validateConsentDraft(draft: { content: string }): string | null {

@@ -4,6 +4,8 @@
  * 모든 enum 은 `as const` 객체 + union type 패턴으로 정의 (tree-shake 친화적).
  */
 
+import type { Region } from "@/entities/region";
+
 export const MemberType = {
   AUDIENCE: "AUDIENCE",
   CREATOR: "CREATOR",
@@ -82,8 +84,8 @@ export interface MemberDetail {
   updateDate: string;
   /** 선호 장르 목록 */
   genres?: string[] | null;
-  /** 선호 지역 */
-  area?: string | null;
+  /** 선호 지역 — 공연 상세의 `area` 와 값 체계가 다르다 (광주·전남이 한 값) */
+  region?: Region | null;
   /** 본인인증을 마친 회원만 값이 있다 */
   phoneNumber?: string | null;
 }
