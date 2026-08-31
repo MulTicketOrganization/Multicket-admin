@@ -144,6 +144,54 @@
   사용자용 API 라 미배선. 회원 상세에서 동의 이력을 보여줄 필요가 있는지 검토
   (현재 `/admin/member/detail` 에는 동의 정보가 없다).
 
+### 1.11 스키마 breaking change 반영 (2026-08-29)
+
+`/admin/**` endpoint 목록은 그대로(46개)인데 스키마가 또 여러 군데 바뀌어 전부 반영했다.
+
+- **공고 등록·수정에 `memberType`·`appVersionId` 가 필수로 추가됐다.** 두 값을 안 보내면
+  모든 공고 등록/수정이 400 이 난다. 폼에 "공지 대상자"·"연결할 앱 버전" 선택을 붙였고,
+  응답의 `memberType`·`appVersion` 을 목록·상세에 노출한다.
+  - [ ] `appVersionId` 가 **모든 타입에 필수**다. 환불 규정·정산 안내처럼 앱 버전과
+    무관한 공고에도 억지로 한 건을 골라야 하고, 앱 버전이 하나도 등록돼 있지 않으면
+    공고를 아예 만들 수 없다. APP_UPDATE 에만 필수로 바꿀 수 있는지 확인 요청.
+- **지역 어휘가 두 벌로 갈라졌다.** 뒤섞으면 400 이 나므로 `entities/region` 슬라이스로
+  분리하고 공연·회원이 함께 쓰도록 했다.
+  - `Area` (공연 상세 `area`): 기존 시/도 코드 — `GWANGJU`·`JEONNAM` 이 별도
+  - `Region` (공연 목록 `?region=`, 회원 `region`): **광주·전남이 `GWANGJU_JEONNAM` 으로
+    통합**되고 나머지는 시/도 코드. 직전까지 쓰던 권역 코드(`CAPITAL`/`CHUNGCHEONG`/
+    `YEONGNAM`/`HONAM`)는 전부 사라졌다 — 8/27 에 붙인 필터가 통째로 무효가 됐다.
+  - [ ] 두 벌을 유지할 계획인지 확인. 공연 상세의 `area=GWANGJU`/`JEONNAM` 을 그대로 목록
+    필터에 넘기면 거부된다. 지금은 두 값을 섞어 쓰는 화면이 없어 변환 없이 두었지만,
+    "이 지역 공연 보기" 같은 동선이 생기면 매핑이 필요하다.
+- **회원 응답의 `area` 가 `region` 으로 이름이 바뀌었다** (`AdminMemberResponse`,
+  `GET /api/member/me`). 기존 필드명으로는 값이 항상 undefined 였다.
+- `GET /api/member/me` 에 `authCheck`·`businessAuthCompleted`·`orderNotificationEnabled`·
+  `emailNotificationEnabled`·`consents` 가 추가돼 타입에 반영하고, 내 계정 화면에
+  본인인증·계좌 인증 여부를 노출했다.
+- **정산 상세: `portoneTransferId` → `transferId` 로 이름이 바뀌고 `pgFeeRatePercent` 가
+  추가됐다.** `feeAmount` 의 의미도 "플랫폼 수수료" 에서 "플랫폼 + PG 수수료 합계" 로
+  바뀌어 산출 근거 표기를 고쳤다.
+- **환불 응답이 `TicketPaymentCancelResponse` → `PaymentCancelResponse` 로 바뀌면서
+  `refundAmount`·`cancelFeeAmount`·`refundMethod`·`expectedRefundPeriod`·`cancelledAt` 가
+  실려 온다.** 환불 성공 토스트에 실제 환불액과 취소 수수료를 보여준다.
+- `DiscountDto.discountName`(할인명) 추가 — 공연 상세 할인 목록에 표기.
+- inbox 이벤트 타입에 `PLATFORM_PARTNER_CONTACT_SYNC` 추가 (재실행 미지원).
+- 모든 목록 응답에 적용된 필터를 되돌려주는 `applied*` 필드가 붙었다. 프론트가 필터
+  상태를 URL 로 관리하고 있어 쓰지 않는다 (여분 필드라 무해).
+
+### 1.12 환불 예상액 — 부분 해결 (2026-08-29)
+
+- `GET /notice/refund-policy` 가 생겼다. 관람일까지 남은 일수별 환불 비율표를 그대로
+  주며 로그인 없이 조회 가능해, **환불 다이얼로그에 비율표를 띄우고 해당 구간 금액을
+  한 번에 채우는 버튼**을 붙였다. 1.7 의 "환불 예상액 조회 API 부재" 는 이걸로 실무상
+  해소된다 (계산 근거를 운영자가 눈으로 확인 가능).
+- `GET /order/ticket/{paymentId}/cancel-amount` 도 생겼지만 **본인 주문만 조회 가능**해
+  관리자 화면에서는 쓸 수 없다.
+  - [ ] MASTER 가 남의 주문에도 이 API 를 쓸 수 있게 열어줄 수 있는지 확인 (1.6 과 동일한
+    소유권 제한 이슈). 열리면 예상 환불액을 자동으로 채워 400 위험을 없앨 수 있다.
+- 프론트 계산은 어디까지나 참고용이다 — 유예시간 예외(`gracePeriodHours`)와 무료/부분
+  취소 케이스는 반영하지 않고 최종 검증은 백엔드에 맡긴다.
+
 ---
 
 ## 2. 로컬 개발 환경 주의 사항
