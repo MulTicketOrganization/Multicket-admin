@@ -65,3 +65,15 @@ export function toLocalDateTimeParam(value: string): string | undefined {
   if (!value) return undefined;
   return value.length === 16 ? `${value}:00` : value;
 }
+
+/**
+ * 지금부터 대상 시각까지 남은 일수 (내림).
+ * 이미 지났으면 음수, 파싱 불가면 null.
+ */
+export function daysUntil(iso: string | null | undefined, now: Date = new Date()): number | null {
+  if (!iso) return null;
+  const target = new Date(iso);
+  if (Number.isNaN(target.getTime())) return null;
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  return Math.floor((target.getTime() - now.getTime()) / MS_PER_DAY);
+}

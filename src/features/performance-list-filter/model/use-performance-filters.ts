@@ -3,11 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
-import {
-  Genre,
-  Region,
-  type PerformanceListFilters,
-} from "@/entities/performance";
+import { Genre, type PerformanceListFilters } from "@/entities/performance";
+import { Region } from "@/entities/region";
 
 const KEY_TITLE = "title";
 const KEY_GENRE = "genre";

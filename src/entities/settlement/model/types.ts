@@ -41,11 +41,15 @@ export interface SettlementDetail {
   settlementDate: string | null;
   totalSuccessAmount: number;
   totalCancelAmount: number;
+  /** 플랫폼 수수료율(%) */
   feeRatePercent: number;
+  /** PG(결제대행) 수수료율(%) */
+  pgFeeRatePercent: number;
+  /** 수수료 금액 합계 — 플랫폼 + PG */
   feeAmount: number;
   finalAmount: number;
-  /** SUCCESS 로 전이된 뒤에만 채워진다. null 이면 아직 이체 전 */
-  portoneTransferId: string | null;
+  /** PG 지급요청 참조 ID — SUCCESS 로 전이된 뒤에만 채워진다. null 이면 아직 이체 전 */
+  transferId: string | null;
   status: SettlementStatus;
   successAt: string | null;
   createDate: string;

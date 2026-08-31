@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { Search, X } from "lucide-react";
 
-import { Genre, Region, genreLabel, regionLabel } from "@/entities/performance";
+import { Genre, genreLabel } from "@/entities/performance";
+import { Region, regionLabel } from "@/entities/region";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -96,18 +97,18 @@ export function PerformanceListFilter() {
           </SelectContent>
         </Select>
 
-        {/* 백엔드 목록 필터는 시/도가 아니라 권역 단위 */}
+        {/* 목록 필터의 region 은 시/도 단위지만 광주·전남이 한 값으로 합쳐져 있다 */}
         <Select
           value={region ?? ALL_SENTINEL}
           onValueChange={(v) =>
             update({ region: v === ALL_SENTINEL ? null : (v as Region) })
           }
         >
-          <SelectTrigger aria-label="권역 필터">
-            <SelectValue placeholder="권역" />
+          <SelectTrigger aria-label="지역 필터">
+            <SelectValue placeholder="지역" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_SENTINEL}>전체 권역</SelectItem>
+            <SelectItem value={ALL_SENTINEL}>전체 지역</SelectItem>
             {Object.values(Region).map((r) => (
               <SelectItem key={r} value={r}>
                 {regionLabel[r]}

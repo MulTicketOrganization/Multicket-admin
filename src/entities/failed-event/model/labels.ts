@@ -22,6 +22,7 @@ export const failedEventTypeLabel: Record<FailedEventType, string> = {
   [FailedEventType.MAINTENANCE_REDIS_EVICT]: "점검 캐시 무효화",
   [FailedEventType.PLATFORM_PARTNER_REGISTER]: "PG 파트너 등록",
   [FailedEventType.PLATFORM_PARTNER_UPDATE]: "PG 파트너 수정",
+  [FailedEventType.PLATFORM_PARTNER_CONTACT_SYNC]: "PG 파트너 연락처 동기화",
   [FailedEventType.INQUIRY_CREATED_SLACK]: "문의 접수 Slack 알림",
   [FailedEventType.TICKET_NOTIFICATION]: "예매 알림",
   [FailedEventType.USER_LOG]: "사용자 로그",

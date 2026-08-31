@@ -14,6 +14,7 @@ import {
   useNoticeList,
   type NoticeListItem,
 } from "@/entities/notice";
+import { memberTypeLabel } from "@/entities/member";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
@@ -28,7 +29,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { useNoticeFilters } from "@/features/notice-list-filter";
 import { formatDateTime } from "@/shared/lib/format";
 
-const COLUMN_COUNT = 6;
+const COLUMN_COUNT = 7;
 
 export function NoticeListTable() {
   const { filters } = useNoticeFilters();
@@ -54,6 +55,7 @@ export function NoticeListTable() {
             <TableHead className="w-16">ID</TableHead>
             <TableHead className="w-48">타입</TableHead>
             <TableHead>제목</TableHead>
+            <TableHead className="w-28">대상</TableHead>
             <TableHead className="w-40">등록일</TableHead>
             <TableHead className="w-40">만료</TableHead>
             <TableHead className="w-24">노출</TableHead>
@@ -130,6 +132,9 @@ function NoticeRow({ notice: n }: { notice: NoticeListItem }) {
         {n.writerEmail && (
           <span className="ml-2 text-xs text-muted-foreground">{n.writerEmail}</span>
         )}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {memberTypeLabel[n.memberType]}
       </TableCell>
       <TableCell className="text-xs text-muted-foreground">
         {formatDateTime(n.createDate)}

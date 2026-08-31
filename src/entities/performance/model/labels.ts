@@ -1,37 +1,4 @@
-import { Area, CastStaff, DiscountType, Genre, Region, SessionSaleStatus, TicketType } from "./types";
-
-export const areaLabel: Record<Area, string> = {
-  [Area.SEOUL]: "서울특별시",
-  [Area.INCHEON]: "인천광역시",
-  [Area.DAEJEON]: "대전광역시",
-  [Area.DAEGU]: "대구광역시",
-  [Area.GWANGJU]: "광주광역시",
-  [Area.BUSAN]: "부산광역시",
-  [Area.ULSAN]: "울산광역시",
-  [Area.SEJONG]: "세종특별자치시",
-  [Area.GYEONGGI]: "경기도",
-  [Area.CHUNGBUK]: "충청북도",
-  [Area.CHUNGNAM]: "충청남도",
-  [Area.GYEONGBUK]: "경상북도",
-  [Area.GYEONGNAM]: "경상남도",
-  [Area.JEONBUK]: "전북특별자치도",
-  [Area.JEONNAM]: "전라남도",
-  [Area.GANGWON]: "강원특별자치도",
-  [Area.JEJU]: "제주특별자치도",
-  [Area.DAEHAKRO]: "대학로",
-  [Area.ETC]: "기타",
-};
-
-export const regionLabel: Record<Region, string> = {
-  [Region.CAPITAL]: "수도권",
-  [Region.CHUNGCHEONG]: "충청권",
-  [Region.YEONGNAM]: "영남권",
-  [Region.HONAM]: "호남권",
-  [Region.GANGWON]: "강원",
-  [Region.JEJU]: "제주",
-  [Region.DAEHAKRO]: "대학로",
-  [Region.ETC]: "기타",
-};
+import { CastStaff, DiscountType, Genre, SessionSaleStatus, TicketType } from "./types";
 
 export const genreLabel: Record<Genre, string> = {
   [Genre.PLAY]: "연극",
@@ -45,10 +12,6 @@ export const genreLabel: Record<Genre, string> = {
 /** 백엔드가 새 장르를 추가해도 화면이 깨지지 않도록 미지의 값은 코드를 그대로 보여준다 */
 export function formatGenre(genre: string): string {
   return genreLabel[genre as Genre] ?? genre;
-}
-
-export function formatArea(area: string): string {
-  return areaLabel[area as Area] ?? area;
 }
 
 export const castStaffLabel: Record<CastStaff, string> = {

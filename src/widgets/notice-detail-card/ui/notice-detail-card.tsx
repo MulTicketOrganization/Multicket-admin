@@ -2,6 +2,8 @@
 
 import { AlertCircle } from "lucide-react";
 
+import { appPlatformLabel } from "@/entities/app-version";
+import { memberTypeLabel } from "@/entities/member";
 import {
   isNoticeExpired,
   noticePlatformLabel,
@@ -60,6 +62,7 @@ export function NoticeDetailCard({ noticeId }: { noticeId: number }) {
                 {noticePlatformLabel[p]}
               </Badge>
             ))}
+            <Badge variant="outline">대상 {memberTypeLabel[data.memberType]}</Badge>
             <div className="ml-auto">
               <NoticeDeleteButton noticeId={data.id} noticeTitle={data.title} />
             </div>
@@ -78,6 +81,14 @@ export function NoticeDetailCard({ noticeId }: { noticeId: number }) {
                 value={formatDateTime(data.maintenanceStartDate)}
               />
             )}
+            <Field
+              label="앱 버전"
+              value={
+                data.appVersion
+                  ? `${appPlatformLabel[data.appVersion.platform]} ${data.appVersion.version}`
+                  : "연결 없음"
+              }
+            />
             <Field
               label="작성자"
               value={data.writerEmail ?? "기록 없음 (마이그레이션 이전 공고)"}

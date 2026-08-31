@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Loader2, Save, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { appPlatformLabel, useAppVersions } from "@/entities/app-version";
+import { MemberType, memberTypeLabel } from "@/entities/member";
 import {
   NoticePlatform,
   NoticeType,
@@ -69,6 +71,16 @@ export function NoticeForm({ notice, redirectTo }: NoticeFormProps) {
   const [platforms, setPlatforms] = useState<NoticePlatform[]>(
     notice?.targetPlatforms ?? [],
   );
+  const [memberType, setMemberType] = useState<MemberType>(
+    notice?.memberType ?? MemberType.AUDIENCE,
+  );
+  const [appVersionId, setAppVersionId] = useState<number | null>(
+    notice?.appVersion?.id ?? null,
+  );
+
+  // appVersionId 는 모든 타입에 필수라 등록 폼에서 항상 이력을 불러온다
+  const appVersionQuery = useAppVersions();
+  const appVersions = appVersionQuery.data ?? [];
 
   const createMutation = useCreateNotice();
   const updateMutation = useUpdateNotice(notice?.id ?? 0);
@@ -86,6 +98,7 @@ export function NoticeForm({ notice, redirectTo }: NoticeFormProps) {
     updatePolicy: needsPolicy ? updatePolicy : undefined,
     targetPlatforms: needsPlatforms ? platforms : undefined,
     maintenanceStartDate: needsMaintenanceStart ? maintenanceStartDate : undefined,
+    appVersionId,
   };
   const validationError = validateNoticeDraft(draft);
 
@@ -114,6 +127,8 @@ export function NoticeForm({ notice, redirectTo }: NoticeFormProps) {
       ...(needsMaintenanceStart
         ? { maintenanceStartDate: toLocalDateTimeParam(maintenanceStartDate) }
         : {}),
+      memberType,
+      appVersionId: appVersionId!,
     };
 
     mutation.mutate(body, {
@@ -134,6 +149,8 @@ export function NoticeForm({ notice, redirectTo }: NoticeFormProps) {
           setMaintenanceStartDate("");
           setPlatforms([]);
           setUpdatePolicy(undefined);
+          setMemberType(MemberType.AUDIENCE);
+          setAppVersionId(null);
         }
       },
       onError: (err) => {
@@ -175,6 +192,63 @@ export function NoticeForm({ notice, redirectTo }: NoticeFormProps) {
           />
           <p className="text-xs text-muted-foreground">
             이 시각이 지나면 사용자에게 노출되지 않습니다. 등록 후에도 수정·삭제할 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="notice-member-type">
+            공지 대상자 <span className="text-destructive">*</span>
+          </Label>
+          <Select value={memberType} onValueChange={(v) => setMemberType(v as MemberType)}>
+            <SelectTrigger id="notice-member-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.values(MemberType).map((m) => (
+                <SelectItem key={m} value={m}>
+                  {memberTypeLabel[m]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            AUDIENCE(관객)를 고르면 창작자·관리자를 포함한 전원이 대상입니다.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notice-app-version">
+            연결할 앱 버전 <span className="text-destructive">*</span>
+          </Label>
+          <Select
+            value={appVersionId != null ? String(appVersionId) : ""}
+            onValueChange={(v) => setAppVersionId(Number(v))}
+            disabled={appVersions.length === 0}
+          >
+            <SelectTrigger id="notice-app-version">
+              <SelectValue
+                placeholder={
+                  appVersionQuery.isPending
+                    ? "버전 목록 불러오는 중..."
+                    : appVersions.length === 0
+                      ? "등록된 앱 버전이 없습니다"
+                      : "선택하세요"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {appVersions.map((v) => (
+                <SelectItem key={v.id} value={String(v.id)}>
+                  {appPlatformLabel[v.platform]} {v.version}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            이 공고가 요구하는 앱 최소 버전입니다. 모든 타입에 필수라 앱 버전 관리에
+            먼저 한 건 이상 등록돼 있어야 합니다.
           </p>
         </div>
       </div>

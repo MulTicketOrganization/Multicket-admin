@@ -62,7 +62,12 @@ export async function mockMe(page: Page, overrides: Record<string, unknown> = {}
           createDate: "2026-01-01T09:00:00",
           updateDate: "2026-05-15T18:00:00",
           genres: [],
-          area: null,
+          region: null,
+          authCheck: true,
+          businessAuthCompleted: false,
+          orderNotificationEnabled: true,
+          emailNotificationEnabled: true,
+          consents: [],
           ...overrides,
         },
       }),
@@ -122,7 +127,7 @@ export async function mockMemberDetail(page: Page, member: MockMember) {
     day: 19,
     updateDate: member.createDate,
     genres: [],
-    area: null,
+    region: null,
     phoneNumber: member.phoneNumber ?? null,
   };
   await page.route("**/api/backend/admin/member/detail*", (route) =>
@@ -410,6 +415,8 @@ export interface MockNotice {
   maintenanceStartDate?: string | null;
   updatePolicy?: string | null;
   targetPlatforms?: string[] | null;
+  memberType?: string;
+  appVersion?: Record<string, unknown> | null;
 }
 
 export const SAMPLE_NOTICE: MockNotice = {
@@ -421,6 +428,15 @@ export const SAMPLE_NOTICE: MockNotice = {
   writerEmail: "admin@multicket.com",
   createDate: "2026-05-01T10:00:00",
   expireDate: "2099-01-01T00:00:00",
+  memberType: "AUDIENCE",
+  appVersion: {
+    id: 1,
+    platform: "IOS",
+    version: "1.2.3",
+    appliedDate: "2026-05-01",
+    updateNote: null,
+    createDate: "2026-05-01T09:00:00",
+  },
 };
 
 /**
@@ -565,10 +581,11 @@ export async function mockSettlementDetail(
           settlementDate: "2026-06-30T00:00:00",
           totalSuccessAmount: 1000000,
           totalCancelAmount: 0,
-          feeRatePercent: 10,
+          feeRatePercent: 7,
+          pgFeeRatePercent: 3,
           feeAmount: 100000,
           finalAmount: 900000,
-          portoneTransferId: null,
+          transferId: null,
           successAt: null,
           ...overrides,
         },
@@ -933,4 +950,126 @@ export async function mockConsentDocumentCreate(
     if (onCall) onCall(route.request().postDataJSON() as Record<string, unknown>);
     await route.fulfill(fulfillJson(200, { msg: "OK", data: null }));
   });
+}
+
+
+/* ============================== Orders ============================== */
+
+export interface MockOrder {
+  orderId: number;
+  paymentId: string;
+  paidAt: string | null;
+  paymentMethod: string | null;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  buyerPhoneNumber: string | null;
+}
+
+export const SAMPLE_ORDER: MockOrder = {
+  orderId: 501,
+  paymentId: "pay_20260601_0001",
+  paidAt: "2026-06-01T13:00:00",
+  paymentMethod: "카드",
+  buyerName: "김예매",
+  buyerEmail: "buyer@multicket.com",
+  buyerPhoneNumber: "010-1234-5678",
+};
+
+/** GET /admin/order/list — 회원 단위 cursor 목록 */
+export async function mockMemberOrders(
+  page: Page,
+  orders: MockOrder[] = [SAMPLE_ORDER],
+  { hasNext = false }: { hasNext?: boolean } = {},
+) {
+  await page.route("**/api/backend/admin/order/list**", (route) =>
+    route.fulfill(fulfillJson(200, { msg: "OK", data: { data: orders, hasNext } })),
+  );
+}
+
+/** GET /admin/order/detail */
+export async function mockOrderDetail(
+  page: Page,
+  overrides: Record<string, unknown> = {},
+) {
+  await page.route("**/api/backend/admin/order/detail**", (route) =>
+    route.fulfill(
+      fulfillJson(200, {
+        msg: "OK",
+        data: {
+          ...SAMPLE_ORDER,
+          performanceId: 1,
+          performanceTitle: "테스트 공연",
+          enableDate: "2026-06-20T19:30:00",
+          ticketOrderStatus: "SUCCESS",
+          discountAmount: 0,
+          finalPaymentAmount: 50000,
+          refundAmount: 0,
+          refundAt: null,
+          ...overrides,
+        },
+      }),
+    ),
+  );
+}
+
+/** PATCH /admin/order/{orderId}/refund */
+export async function mockOrderRefund(
+  page: Page,
+  orderId: number,
+  onCall?: (body: Record<string, unknown>) => void,
+) {
+  await page.route(`**/api/backend/admin/order/${orderId}/refund`, async (route) => {
+    if (onCall) onCall(route.request().postDataJSON() as Record<string, unknown>);
+    await route.fulfill(
+      fulfillJson(200, {
+        msg: "OK",
+        data: {
+          paymentId: SAMPLE_ORDER.paymentId,
+          status: "CANCEL",
+          refundAmount: 45000,
+          cancelFeeAmount: 5000,
+          refundMethod: "카드",
+          expectedRefundPeriod: "카드사 승인 취소까지 3~5영업일 소요됩니다.",
+          cancelledAt: "2026-06-05T10:00:00",
+        },
+      }),
+    );
+  });
+}
+
+/** GET /notice/refund-policy — 관람일까지 남은 일수별 환불 비율표 */
+export async function mockRefundPolicy(page: Page) {
+  await page.route("**/api/backend/notice/refund-policy", (route) =>
+    route.fulfill(
+      fulfillJson(200, {
+        msg: "OK",
+        data: {
+          tiers: [
+            {
+              label: "관람일 10일 전까지",
+              minDaysUntilPerformance: 10,
+              maxDaysUntilPerformance: null,
+              refundPercent: 100,
+            },
+            {
+              label: "관람일 7~9일 전",
+              minDaysUntilPerformance: 7,
+              maxDaysUntilPerformance: 9,
+              refundPercent: 90,
+            },
+            {
+              label: "관람일 3~6일 전",
+              minDaysUntilPerformance: 3,
+              maxDaysUntilPerformance: 6,
+              refundPercent: 70,
+            },
+          ],
+          afterPerformanceStartedPercent: 0,
+          gracePeriodHours: 24,
+          gracePeriodMinDaysBeforePerformance: 10,
+          description: null,
+        },
+      }),
+    ),
+  );
 }
