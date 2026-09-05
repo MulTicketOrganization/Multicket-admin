@@ -6,6 +6,8 @@
 > API 명세는 별도 문서를 두지 않고 **백엔드 Swagger 를 단일 출처로 삼는다**:
 > <https://multicket.duckdns.org/swagger-ui/index.html> (raw: `/v3/api-docs`)
 
+> 최근 코드베이스 전수 점검: **2026-09-05** — 결과는 [§5 아키텍처 / 코드베이스 점검](#5-아키텍처--코드베이스-점검-2026-09-05) 참고.
+
 ---
 
 ## 1. 백엔드 협의 / 요청 (Multicket-app 백엔드 팀)
@@ -214,6 +216,13 @@ pnpm exec playwright install chromium   # 최초 1회
 pnpm test:e2e
 ```
 - 실제 백엔드를 띄우지 않고 `page.route` 로 모두 mock 한다.
+- 현재 13개 스펙 / 71개 케이스 (chromium 단일 프로젝트).
+  `auth` · `guard` · `navigation` · `theme` · `members` · `performances` · `orders` ·
+  `reports` · `inquiries` · `failed-events` · `banners` · `consent-documents` · `operations`
+- dev 서버는 Playwright 가 자동 기동한다 (`webServer`, 로컬은 `reuseExistingServer`).
+- 라우트 커버리지: 25개 페이지 중 **23개**를 실제로 방문한다.
+  미방문 2개 — 랜딩 `/` 과 공고 상세 `/notices/[id]` (수정·삭제 경로가 테스트되지 않음).
+  - [ ] `/notices/[id]` 수정/삭제 스펙 추가 (하드 삭제라 회귀 시 피해가 큼 — 1.5 참고)
 
 ---
 
@@ -241,6 +250,78 @@ pnpm test:e2e
 - [ ] 에러 바운더리 전역 처리 (현재는 화면별 처리 + 토스트)
 - [ ] 접근성 (a11y) 1차 점검
 - [ ] 모바일 사이드바 (현재 `md` 미만에서 숨김, 헤더에 현재 위치만 표시)
+
+---
+
+## 5. 아키텍처 / 코드베이스 점검 (2026-09-05)
+
+전 소스를 훑어 FSD 준수 여부와 구조적 부채를 정리했다.
+규모: TS·TSX **288 파일 / 약 18,400 LOC**, entities 17 · features 24 · widgets 28 슬라이스.
+
+### 5.1 판정: FSD 로 만들어져 있다 ✅
+
+| 검사 항목                                        | 결과                      |
+| ------------------------------------------------ | ------------------------- |
+| 레이어 구성 (`shared`/`entities`/`features`/`widgets`) | 4개 모두 존재         |
+| 레이어 역방향 의존 (`shared → entities` 등)      | **0건**                   |
+| `entities → features/widgets`                    | **0건**                   |
+| `features → widgets`                             | **0건**                   |
+| public API(`index.ts`) 우회 import                | **0건** (69개 슬라이스 전부 `index.ts` 보유) |
+| 세그먼트 관례 (`api`/`model`/`ui`)               | 전 슬라이스 일관          |
+
+`app/**/page.tsx` 는 전부 서버 컴포넌트로, metadata 선언 + 위젯 조립만 한다.
+`"use client"` 는 widgets/features 의 `ui/` 아래에서 시작한다 (111 파일).
+FSD 의 `pages` 레이어는 두지 않고 Next.js App Router 의 `app/` 이 겸한다 — 의도된 선택.
+
+### 5.2 같은 레이어 내 교차 참조 (FSD 상 편법)
+
+FSD 는 동일 레이어 슬라이스 간 참조를 원칙적으로 금지하고, 불가피하면 `@x` (cross-import)
+표기를 쓰도록 한다. 현재 7건이 있고 전부 `@x` 없이 직접 참조한다.
+
+**entities ↔ entities (6건, 전부 `import type` — 런타임 결합 없음)**
+
+| 슬라이스              | 참조 대상                                 |
+| --------------------- | ----------------------------------------- |
+| `account`             | `member`, `consent-document`, `region`    |
+| `inquiry`             | `member`                                  |
+| `member`              | `region`                                  |
+| `notice`              | `app-version`, `member`                   |
+| `performance`         | `member`, `region`                        |
+
+- 타입 전용이고 public API 를 거치므로 실질 위험은 낮다. 다만 `member` 가
+  `Gender`/`LoginType`/`MemberType`/`MemberStatus` 같은 **공용 어휘의 사실상 보관소**가 돼 있다.
+- [ ] `region` 처럼 공용 enum 어휘를 별도 슬라이스로 더 뽑을지, 아니면 `@x` 표기를 도입할지 결정
+  (`region` 은 2026-08-29 에 이미 이 방식으로 분리한 선례가 있다 — 1.11 참고)
+
+**widgets ↔ widgets (1건, 값 참조 — 실제 결합)**
+
+- [src/widgets/admin-header/ui/admin-header.tsx](src/widgets/admin-header/ui/admin-header.tsx#L6)
+  가 `@/widgets/admin-sidebar` 에서 `ADMIN_NAV_ITEMS`·`isNavItemActive` 를 가져온다.
+- 타입이 아니라 값이라 두 위젯이 실제로 묶여 있다. 네비게이션 정의는 위젯 소유물이 아니라
+  앱 전역 어휘에 가깝다.
+- [ ] `nav-items.ts` 를 `shared/config` 또는 별도 `entities/navigation` 으로 옮기고
+  두 위젯이 각각 참조하도록 정리
+
+### 5.3 구조를 지킬 자동 장치가 없다
+
+- [ ] **FSD 경계를 강제하는 린트 규칙이 없다.** `eslint.config.mjs` 는 `eslint-config-next`
+  기본값뿐이라, 위 규칙들은 전부 사람 눈으로만 지켜지고 있다.
+  `steiger`(FSD 공식 린터) 또는 `eslint-plugin-boundaries` 도입 검토.
+- [ ] **CI 가 없다.** `.github/workflows` 자체가 없어 타입체크·린트·E2E 가 자동 실행되지 않는다.
+  `tsc --noEmit` + `pnpm lint` + `pnpm test:e2e` 를 PR 게이트로 거는 워크플로 추가.
+- [ ] 유닛 테스트가 없다 (E2E 만 71케이스). `format.ts`, `isNavItemActive`,
+  키워드/앱버전 응답 정규화처럼 순수 함수인데 E2E 로만 간접 검증되는 로직이 있다.
+
+### 5.4 그 외 관찰
+
+- `next.config.ts` 가 사실상 비어 있다 (주석만). 이미지 CDN 을 쓰기 시작하면
+  (배너 이미지 — 1.10) `images.remotePatterns` 설정이 필요해진다.
+- `src/entities/region` 만 `api/` 세그먼트가 없다 (순수 어휘 슬라이스). 의도된 형태.
+- `src/features/consent-document-view` 만 `model/` 이 없다 (조회 버튼뿐). 의도된 형태.
+- `.env.example` 의 `BACKEND_API_BASE_URL` 기본값이 **운영 백엔드**를 가리킨다.
+  복사 후 그대로 두면 로컬 개발이 운영 데이터를 건드린다 — 2.2 에 주의가 적혀 있으나
+  기본값을 `http://localhost:8080` 으로 뒤집는 편이 안전하다.
+  - [ ] 기본값 반전 여부 결정
 
 ---
 
